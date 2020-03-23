@@ -12,12 +12,11 @@ from flask import request
 import time
 import glob, os
 from mpd import MPDClient
-from flask_apscheduler import APScheduler
 import time
-
+import random
 from pprint import pprint
 
-
+from apscheduler.schedulers.background import BackgroundScheduler
 
 mpd_client = MPDClient()
 
@@ -25,47 +24,56 @@ mpd_client.timeout = 600
 mpd_client.idletimeout = 600
 mpd_client.connect(app.config['MPD_SERVER'], app.config['MPD_PORT'])
 mpd_client_idle = False
-scheduler = APScheduler()
-scheduler.init_app(app)
-scheduler.start()
 
-app.apscheduler.add_job(func=mpd_keepalive, trigger='interval', seconds=60, id='mpd_reconnect')
 
-def mpd_keepalive(task_id):
+def mpd_connect():
     if not mpd_client_idle:
         try:
-            mpd_client.ping
+            mpd_client.ping()
         except:
             mpd_client.connect(app.config['MPD_SERVER'], app.config['MPD_PORT'])
 
 
+scheduler = BackgroundScheduler()
+scheduler.start()
+scheduler.add_job(mpd_connect, 'interval', seconds=60)
+
 @app.route('/cover', methods=['GET', 'POST'])
 def cover():
-    request_d = dict()
-    request_d['fullpath'] = app.config['MUSIC_DIR'] + '/' + request.args.get('directory', '')
 
-    albumdir = request_d['fullpath']
-    images =  glob.glob(albumdir + '/*.jpg') + glob.glob(albumdir + '/*.jpeg') + glob.glob(albumdir + '/*.gif') + glob.glob(albumdir + '/*.png')
-    cover_patterns = []
-    cover_patterns.append(re.compile("/folder", re.IGNORECASE))
-    cover_patterns.append(re.compile("/cover", re.IGNORECASE))
-    cover_patterns.append(re.compile("front", re.IGNORECASE))
+    dir_content = mpd_client.listfiles( request.args.get('directory', ''))
+
+
+    app.logger.debug('got dir_content ' + json.dumps(dir_content))
+    request_d = request.args.__dict__
+
+    image_pattern = re.compile("\.(jpg|jpeg|png|gif)$", re.IGNORECASE)
+    cover_pattern = re.compile("(folder|cover|front)", re.IGNORECASE)
 
     cover = ''
+
+    images = []
+    for file_data in dir_content:
+        if(image_pattern.search(file_data['file'])):
+            images.append(file_data['file'])
     #check the images which were found
     for image in images:
         #app.logger.debug('image ' + image)
-        for cp in cover_patterns:
-            if(cp.search(image)):
-                #app.logger.debug('got cover ' + image)
-                cover = image
-                break
+        if(cover_pattern.search(image)):
+            app.logger.debug('got cover ' + image)
+            cover = image
+            break
         if(cover != ''):
             break
     if(cover == '' and images):
         cover = images[0]
 
-    request_d['cover'] = cover
+    if(cover == ''):
+        request_d['fullpath'] = '/static/vinyl.png'
+        request_d['cover'] = 'vinyl.png'
+    else:
+        request_d['fullpath'] = request.args.get('directory', '') + '/' + cover
+        request_d['cover'] = cover
 
     return Response(render_template('cover.html', data=request_d))
 
