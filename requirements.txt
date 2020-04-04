@@ -8,6 +8,7 @@ idna==2.9
 itsdangerous==1.1.0
 Jinja2==2.11.1
 MarkupSafe==1.1.1
+nested-lookup==0.2.21
 pkg-resources==0.0.0
 python-dateutil==2.8.1
 python-dotenv==0.12.0

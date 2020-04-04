@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<body>
+
+<p>Try to change the names.</p>
+
+<div ng-app="myApp" ng-controller="myCtrl">
+
+First Name: <input type="text" ng-model="firstName"><br>
+Last Name: <input type="text" ng-model="lastName"><br>
+<br>
+Full Name: {{firstName + " " + lastName}}
+
+
+<div ng-init="names=['Jani','Hege','Kai']">
+  <ul>
+    <li ng-repeat="x in names">
+      {{ x }}
+    </li>
+  </ul>
+</div>
+
+<form name="myForm">
+  Email:
+  <input type="email" name="myAddress" ng-model="text">
+  <span ng-show="myForm.myAddress.$error.email">Not a valid e-mail address</span>
+</form>
+
+ <form>
+  Check to show a header:
+  <input type="checkbox" ng-model="myVar">
+</form>
+
+<h1 ng-show="myVar">My Header</h1>
+<div>
+<form>
+  Pick a topic:
+  <input type="radio" ng-model="topic" value="dogs">Dogs
+  <input type="radio" ng-model="topic" value="tuts">Tutorials
+  <input type="radio" ng-model="topic" value="cars">Cars
+</form>
+<br/>
+{{ topic }}
+</div>
+
+<div ng-controller="myCtrl2">
+
+<p>Today's welcome message is:</p>
+<h1>{{myWelcome}}</h1>
+
+</div>
+
+
+
+
+<div ng-controller="customersCtrl">
+
+<ul>
+  <li ng-repeat="x in myData">
+    {{ x.Name + ', ' + x.Country }}
+  </li>
+</ul>
+
+</div>
+
+<div ng-controller="myCounterCtrl">
+
+<h1 ng-click="myFunction()">Mouse over me!</h1>
+
+<h2>{{ count }}</h2>
+
+<ul>
+  <li ng-repeat="x in myData">
+    {{ x.track + ', ' +  x.artist + ', ' + x.album + ', ' + x.title + ', ' + x.duration}}
+  </li>
+</ul>
+
+</div>
+
+ <div ng-init="mySwitch=true">
+
+<p>
+<button ng-disabled="mySwitch">Click Me!</button>
+</p>
+
+<p>
+<input type="checkbox" ng-model="mySwitch">Button
+</p>
+
+<p>
+{{ mySwitch }}
+</p>
+
+</div>
+ <div ng-init="hour=13">
+
+<p ng-show="hour > 12">I am visible.</p>
+
+</div>
+
+</div>
+
+
+
+<script>
+var app = angular.module('myApp', []);
+app.controller('myCtrl', function($scope) {
+    $scope.firstName= "John";
+    $scope.lastName= "Doe";
+});
+app.controller('myCtrl2', function($scope, $http) {
+  $http.get("welcome.htm")
+  .then(function(response) {
+    $scope.myWelcome = response.data;
+  });
+});
+app.controller('customersCtrl', function($scope, $http) {
+  $http.get("/ls?directory=ugar/Másik János - Menyhárt Jenő - MJMJ").then(function(response) {
+    $scope.myData = response.data;
+  });
+});
+
+app.controller('myCounterCtrl', function($scope, $http) {
+  $scope.count = 0;
+  $scope.myFunction = function() {
+    $scope.count++;
+    $http.get("/ls?directory=ugar/Másik János - Menyhárt Jenő - MJMJ").then(function(response) {
+      $scope.myData = response.data;
+    });
+
+  }
+
+});
+
+</script>
+
+</body>
+</html>
