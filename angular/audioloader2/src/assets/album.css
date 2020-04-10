@@ -1,0 +1,96 @@
+.jumbotron {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+  margin-bottom: 0;
+  background-color: #fff;
+}
+@media (min-width: 768px) {
+  .jumbotron {
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+  }
+}
+
+.jumbotron p:last-child {
+  margin-bottom: 0;
+}
+
+.jumbotron h1 {
+  font-weight: 300;
+}
+
+.jumbotron .container {
+  max-width: 40rem;
+}
+
+footer {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+footer p {
+  margin-bottom: .25rem;
+}
+
+.col-md-1 {
+  padding-right: 3px;
+  padding-left: 3px;
+
+}
+
+ .col-sm-1 {
+  padding-right: 3px;
+  padding-left: 3px;
+
+}
+
+.card-body {
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+    min-height: 1px;
+    padding: 4px;
+
+    font-size: 0.83em;
+    word-wrap: break-word;
+}
+
+.album-cover-img {
+    border-radius: 10%;
+}
+
+.albumlink {
+    font-size: 0.83em;
+    color: #1a1713 !important;
+}
+
+.albumlink a:link {
+    text-decoration: none !important;
+    color: #1a1713 !important;
+}
+
+.album-cover {
+    margin: 0.9em;
+    margin: 1px;
+    text-align: left;
+    vertical-align: top;
+    background-color: #FCFCFC;
+    color: #1a1713 !important;
+    border-radius: 5px;
+    height: 160px;
+    line-height: 1.1;
+    width: 100px;
+    overflow: hidden;
+    border-color: #F1F1F5;
+    border-width: 1.5px;
+    border-style: solid;
+}
+
+
+input.ng-invalid {
+  background-color: pink;
+}
+input.ng-valid {
+  background-color: lightgreen;
+}
+
+
