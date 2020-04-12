@@ -1,0 +1,14 @@
+    <div class="modal-header" id="addPopup">
+      <h5 style="text-align: center;" class="modal-title">Play {{name}}?</h5>
+
+    </div>
+    <div class="modal-body">
+
+      <p style="text-align: center;"><img src="{{ servicesBasePath }}/cover?directory={{ encoded }}" height="92"/></p>
+
+    </div>
+    <div class="modal-footer">
+
+      <button type="button" ngbAutofocus class="btn btn-primary" (click)="addDir(name);activeModal.dismissAll('Close click')">Yes</button>
+      <button type="button" class="btn " (click)="activeModal.dismissAll('Close click')">Cancel</button>
+    </div>

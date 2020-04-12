@@ -3,13 +3,17 @@ import { NgModule, APP_INITIALIZER } from '@angular/core';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { NgbdModalContent } from './app.component';
-import { NgbdModalSettings } from './app.component';
+
 
 import { HttpClientModule }    from '@angular/common/http';
-import {CommonModule} from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { AppConfigService } from './app-config-service.service';
-import {NgbModule} from '@ng-bootstrap/ng-bootstrap';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+
+import { SettingsComponent } from './settings/settings.component';
+import { PopupComponent } from './popup/popup.component';
+
+
 
 const appInitializerFn = (appConfig: AppConfigService) => {
     return () => {
@@ -19,14 +23,14 @@ const appInitializerFn = (appConfig: AppConfigService) => {
 
 @NgModule({
   declarations: [
-    AppComponent, NgbdModalContent, NgbdModalSettings
+    AppComponent, SettingsComponent, PopupComponent
   ],
   imports: [
     BrowserModule,
     HttpClientModule,
     CommonModule,
     AppRoutingModule,
-    NgbModule
+    NgbModule,
   ],
   providers: [
     AppConfigService,
@@ -37,6 +41,7 @@ const appInitializerFn = (appConfig: AppConfigService) => {
             deps: [AppConfigService]
         }
   ],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  entryComponents: [ SettingsComponent, PopupComponent ]
 })
 export class AppModule { }

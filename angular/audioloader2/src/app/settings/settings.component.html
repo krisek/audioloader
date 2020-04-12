@@ -1,0 +1,16 @@
+    <div class="modal-header" id="settings">
+      <h4 style="text-align: center;" class="modal-title">Settings</h4>
+
+    </div>
+    <div class="modal-body">
+
+      MPD server: <input id="mpd_server" class="form-control" placeholder="localhost" name="mpd_server" [value]="mpd_server" (input)="mpd_server = $event.target.value; update('mpd_server')" onfocus="this.select();"><br/>
+      MPD port: <input id="mpd_port" class="form-control" placeholder="6600" name="mpd_port" [value]="mpd_port" (input)="mpd_port = $event.target.value; update('mpd_port')" onfocus="this.select();"><br/>
+      Stream (in MPD config): <input id="stream" class="form-control" placeholder="http://box.lxs.cloud:18080" name="stream" [value]="stream" (input)="stream = $event.target.value; update('stream')" onfocus="this.select();"><br/>
+      Client: <input id="client_id" class="form-control" placeholder="x" name="client_id" [value]="client_id" (input)="client_id = $event.target.value; update('client_id')" onfocus="this.select();"><br/>
+      Target: <input id="target" class="form-control" placeholder="kodi" name="target" [value]="target" (input)="target = $event.target.value; update('target')" onfocus="this.select();"><br/><br/>
+
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn " (click)="activeModal.dismissAll('Close click')">Close</button>
+    </div>

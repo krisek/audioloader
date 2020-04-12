@@ -1,111 +1,11 @@
-import { Component,Input } from '@angular/core';
+import { Component,Input, Output, EventEmitter } from '@angular/core';
 import { HttpClient }  from '@angular/common/http';
-import {CommonModule} from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { AppConfigService } from './app-config-service.service';
-import {NgbModal, NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import { SettingsComponent } from './settings/settings.component';
+import { PopupComponent } from './popup/popup.component';
+import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
-
-
-@Component({
-  selector: 'ngbd-modal-content',
-  template: `
-    <div class="modal-header" id="addPopup">
-      <h5 style="text-align: center;" class="modal-title">Play {{name}}?</h5>
-
-    </div>
-    <div class="modal-body">
-
-      <p style="text-align: center;"><img src="{{ servicesBasePath }}/cover?directory={{ encoded }}" height="92"/></p>
-
-    </div>
-    <div class="modal-footer">
-
-      <button type="button" ngbAutofocus class="btn btn-primary" (click)="addDir(name);activeModal.close('Close click')">Yes</button>
-      <button type="button" class="btn " (click)="activeModal.close('Close click')">Cancel</button>
-    </div>
-
-  `
-})
-export class NgbdModalContent {
-  @Input() name;
-  @Input() encoded;
-  @Input() servicesBasePath;
-  @Input() stream;
-  @Input() target;
-
-
-
-  constructor(public activeModal: NgbActiveModal, private http: HttpClient) {}
-
-   addDir(dir){
-    console.log("addDir: " + dir);
-
-
-    this.http.get<any>(this.servicesBasePath + '/add?directory=' + encodeURIComponent(dir)).subscribe(data => {
-      console.log(data);
-
-    })
-  };
-
-}
-
-
-@Component({
-  selector: 'ngbd-modal-settings',
-  template: `
-    <div class="modal-header" id="settings">
-      <h4 style="text-align: center;" class="modal-title">Settings</h4>
-
-    </div>
-    <div class="modal-body">
-
-      MPD server: <input id="mpd_server" class="form-control" placeholder="localhost" name="mpd_server" [value]="mpd_server" (input)="mpd_server = $event.target.value; update('mpd_server')" onfocus="this.select();"><br/>
-      MPD port: <input id="mpd_port" class="form-control" placeholder="6600" name="mpd_port" [value]="mpd_port" (input)="mpd_port = $event.target.value; update('mpd_port')" onfocus="this.select();"><br/>
-      Stream (in MPD config): <input id="stream" class="form-control" placeholder="http://box.lxs.cloud:18080" name="stream" [value]="stream" (input)="stream = $event.target.value; update('stream')" onfocus="this.select();"><br/>
-      Client: <input id="client_id" class="form-control" placeholder="x" name="client_id" [value]="client_id" (input)="client_id = $event.target.value; update('client_id')" onfocus="this.select();"><br/>
-      Target: <input id="target" class="form-control" placeholder="kodi" name="target" [value]="target" (input)="target = $event.target.value; update('target')" onfocus="this.select();"><br/><br/>
-
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn " (click)="activeModal.close('Close click')">Close</button>
-    </div>
-
-  `
-})
-export class NgbdModalSettings {
-  mpd_server = "";
-  mpd_port = "";
-  stream = "";
-  client_id = "";
-  target = "";
-
-
-  constructor(public activeModal: NgbActiveModal) {}
-
-
-  ngOnInit(){
-    console.log("init NgbdModalSettings");
-
-    if(typeof(localStorage.mpd_server) != "undefined") this.mpd_server = localStorage.mpd_server;
-    if(typeof(localStorage.mpd_port) != "undefined") this.mpd_port = localStorage.mpd_port;
-    if(typeof(localStorage.stream) != "undefined") this.stream = localStorage.stream;
-    if(typeof(localStorage.client_id) != "undefined") this.client_id = localStorage.client_id;
-    if(typeof(localStorage.target) != "undefined") this.target = localStorage.target;
-
-
-  };
-
-  update(variable){
-      if(variable == "mpd_server") localStorage.mpd_server = this.mpd_server;
-      if(variable == "mpd_port") localStorage.mpd_port = this.mpd_port;
-      if(variable == "stream") localStorage.stream = this.stream;
-      if(variable == "client_id") localStorage.client_id = this.client_id;
-      if(variable == "target") localStorage.target = this.target;
-  };
-
-
-
-}
 
 
 @Component({
@@ -136,7 +36,9 @@ export class AppComponent {
 
   isMenuCollapsed = true;
 
-  constructor(private environment: AppConfigService, private http: HttpClient, private modalService: NgbModal) {
+  currentsong = {'title': 'not playing', 'active': false, 'title_short': 'not playing', 'album': '', 'track': '', 'artist': ''};
+
+  constructor(private environment: AppConfigService, private http: HttpClient, private modalService: NgbModal, private http2: HttpClient) {
     this.servicesBasePath = environment.config.servicesBasePath;
     }
 
@@ -147,8 +49,44 @@ export class AppComponent {
       this.last_directory = localStorage.last_directory;
     }
     this.showDir(this.last_directory);
+
+    this.pollCurrentsong();
+
   };
 
+  delay(ms: number) {
+    return new Promise( resolve => setTimeout(resolve, ms) );
+  };
+
+  pollCurrentsong(){
+    this.http2.get<any>(this.servicesBasePath + '/poll_currentsong').subscribe(data => {
+      console.log(data);
+      this.currentsong = data;
+      this.currentsong['title_short'] = this.truncate(this.currentsong['title'], 28);
+      console.log(this.currentsong);
+      this.pollCurrentsong();
+    },
+    async error => {
+      console.log('error polling currentsong');
+      await this.delay(5000);
+      this.pollCurrentsong();
+    });
+
+
+  };
+
+  updateCurrentSong(){
+    this.http.get<any>(this.servicesBasePath + '/currentsong').subscribe(data => {
+      console.log(data);
+
+      this.currentsong = data;
+
+      this.currentsong['title_short'] = this.truncate(this.currentsong['title'], 28);
+      console.log(this.currentsong);
+      //console.log(this.currentsong);
+    })
+
+  };
 
 
   displayTree(data){
@@ -254,13 +192,22 @@ export class AppComponent {
     console.log("addDir: " + dir);
 
 
-    this.http.get<any>(this.servicesBasePath + '/add?directory=' + encodeURIComponent(dir)).subscribe(data => {
-      console.log("enqueued dir " + dir);
-      this.http.get<any>(this.servicesBasePath + '/play').subscribe(data => {
-      console.log("played dir");
-      })
+    this.http.get<any>(this.servicesBasePath + '/addplay?directory=' + encodeURIComponent(dir)).subscribe(data => {
+      console.log("enqueued dir ");
+      this.sendCommand('play');
 
     })
+  };
+
+  sendCommand(command){
+    console.log("sendCommand: " + command);
+
+
+    this.http.get<any>(this.servicesBasePath + '/' + command).subscribe(data => {
+      console.log("returned");
+      })
+
+
   };
 
 
@@ -290,15 +237,21 @@ export class AppComponent {
 
 
  openModal(dir) {
-    const modalRef = this.modalService.open(NgbdModalContent);
+    const modalRef = this.modalService.open(PopupComponent);
     modalRef.componentInstance.name = dir;
     modalRef.componentInstance.encoded = encodeURIComponent(dir);
     modalRef.componentInstance.servicesBasePath = this.servicesBasePath;
+
+    modalRef.componentInstance.messageEvent.subscribe((receivedEntry) => {
+      console.log("openModal returned: " + receivedEntry);
+      this.addDir(receivedEntry);
+    })
+
   }
 
  openSettings() {
     console.log("openSettings");
-    const modalRefSettings = this.modalService.open(NgbdModalSettings);
+    const modalRefSettings = this.modalService.open(SettingsComponent);
   }
 
   coverPress(dir){

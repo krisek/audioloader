@@ -1,11 +1,16 @@
 <body>
   <header>
+
+
   <div [ngbCollapse]="isMenuCollapsed" class="collapse bg-dark" id="navbarHeader">
     <div class="container">
       <div class="row">
         <div class="col-sm-8 col-md-7 py-4">
         <!--   <h4 class="text-white"></h4> //-->
-          <p class="text-muted">Add some information ....</p>
+          <p class="text-muted" *ngIf="currentsong['active']">{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}</p>
+          <p class="text-muted" *ngIf="!currentsong['active']">not playing</p>
+
+
         </div>
         <div class="col-sm-4 offset-md-1 py-4">
 
@@ -19,12 +24,25 @@
   </div>
   <div class="navbar navbar-dark bg-dark shadow-sm">
     <div class="container d-flex justify-content-between">
-      <a href="#" class="navbar-brand d-flex align-items-center">
+     <div>
+     <span class="bg-dark text-white" type="button">dir</span> |
+     <span class="bg-dark text-white" type="button">dash</span> |
 
-        <strong>Audioloader2</strong>
-      </a>
+     <span *ngIf="currentsong['active']">
+        <span class="bg-dark text-white" type="button" *ngIf="currentsong['pause']" (click)="sendCommand('play')"><img class="mediabutton invert_colors" src="assets/play.svg" title="paused ➙ play" /></span>&nbsp;
+        <span class="bg-dark text-white" type="button" *ngIf="currentsong['play']"  (click)="sendCommand('pause')"><img class="mediabutton invert_colors"   src="assets/pause.svg" title="playing ➙ pause"/></span>&nbsp;
+        <span class="bg-dark text-white" type="button"  (click)="sendCommand('stop')"><img  class="mediabutton invert_colors" src="assets/stop.svg" title="stop"/></span>&nbsp;
+        <span class="bg-dark text-white" type="button"  (click)="sendCommand('prev')" ><img class="mediabutton invert_colors" src="assets/next.svg"  title="prev"  style="transform: rotate(180deg);"/></span>&nbsp;
+        <span class="bg-dark text-white" type="button"  (click)="sendCommand('next')"><img class="mediabutton  invert_colors" src="assets/next.svg" title="next" /></span>&nbsp;
+        <span class="bg-dark text-white" *ngIf="currentsong['track']" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{currentsong['track']}} - </span>
+        <span class="bg-dark text-white" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{ currentsong['title_short'] }}</span>
+     </span>
+     <span class="bg-dark text-white" *ngIf="!currentsong['active']" (click)="updateCurrentSong()">not playing</span>
+
+     </div>
 
       <form class="form-inline my-2 my-lg-0">
+      <img class="invert_colors" type="button" src="assets/settings.svg" title="settings" (click)="openSettings()" width="20px"/>&nbsp;&nbsp;
       <input type="text" class="form-control form-inline" placeholder="search..." name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target.value; searchItem($event.target.value)" onfocus="this.select();" onmouseup="return false;"> &nbsp;
 
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation" (click)="isMenuCollapsed = !isMenuCollapsed">
@@ -78,7 +96,7 @@
         <div id="files">
           <ng-container *ngIf="!dirs">
             <div class="album-cover-frame">
-              <img  src="{{ servicesBasePath }}/cover?directory={{ encoded }}" height="92" title="{{ title }}" class="album-cover-img" class="album-cover-img" type="button" class="btn" data-toggle="modal" data-target="#exampleModal" (click)="coverPress(dir)"/>
+              <img  src="{{ servicesBasePath }}/cover?directory={{ encoded }}" height="92" title="{{ title }}" class="album-cover-img" class="album-cover-img" type="button" class="btn" data-toggle="modal" data-target="#exampleModal" (click)="openModal(dir)"/>
             </div>
             <span class="" *ngFor="let file of tree_file | keyvalue">
                 <span *ngIf="file.value.duration">{{file.value.track}}  -  {{file.value.title}} ({{file.value.duration}})</span>

@@ -6,20 +6,21 @@ from time import sleep
 
 mpd_client = MPDClient()
 mpd_client.connect('localhost', 6600)
-
-mpd_client.send_idle()
-
+mpd_client.timeout = 30
 # do this periodically, e.g. in event loop
 
 
 
 while True:
-  canRead = select([mpd_client], [], [], 10)[0]
+  print('send idle')
 
-  if canRead:
-      changes = mpd_client.fetch_idle()
-      print(changes) # handle changes
-      if 'player' in changes:
-        print(mpd_client.currentsong())
-      mpd_client.send_idle() # continue idling
+  mpd_client.send_idle()
+  print('select')
 
+  canRead = select([mpd_client], [], [], 5)[0]
+  print('select returned')
+
+  mpd_client.noidle()
+  print('currentsong')
+
+  print(mpd_client.currentsong())
