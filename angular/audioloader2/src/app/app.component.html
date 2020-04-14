@@ -14,10 +14,12 @@
         </div>
         <div class="col-sm-4 offset-md-1 py-4">
 
-
+          <!--
           <ul class="list-unstyled">
             <li><a href="#" class="text-white" (click)="openSettings()">Settings</a></li>
           </ul>
+
+          //-->
         </div>
       </div>
     </div>
@@ -25,10 +27,12 @@
   <div class="navbar navbar-dark bg-dark shadow-sm">
     <div class="container d-flex justify-content-between">
      <div>
-     <span class="bg-dark text-white" type="button">dir</span> |
+     <span class="bg-dark text-white" type="button" (click)="showDir('.')">dir</span> |
      <span class="bg-dark text-white" type="button">dash</span> |
 
      <span *ngIf="currentsong['active']">
+        <span class="bg-dark text-white" type="button" (click)="openStream()"><img class="mediabutton invert_colors" src="assets/music-cd.svg" title="load stream" /></span>&nbsp;
+        <span class="bg-dark text-white" type="button" (click)="stopStream()"><img class="mediabutton invert_colors" src="assets/stop.svg" title="stop stream" /></span>
         <span class="bg-dark text-white" type="button" *ngIf="currentsong['pause']" (click)="sendCommand('play')"><img class="mediabutton invert_colors" src="assets/play.svg" title="paused ➙ play" /></span>&nbsp;
         <span class="bg-dark text-white" type="button" *ngIf="currentsong['play']"  (click)="sendCommand('pause')"><img class="mediabutton invert_colors"   src="assets/pause.svg" title="playing ➙ pause"/></span>&nbsp;
         <span class="bg-dark text-white" type="button"  (click)="sendCommand('stop')"><img  class="mediabutton invert_colors" src="assets/stop.svg" title="stop"/></span>&nbsp;
@@ -36,6 +40,8 @@
         <span class="bg-dark text-white" type="button"  (click)="sendCommand('next')"><img class="mediabutton  invert_colors" src="assets/next.svg" title="next" /></span>&nbsp;
         <span class="bg-dark text-white" *ngIf="currentsong['track']" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{currentsong['track']}} - </span>
         <span class="bg-dark text-white" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{ currentsong['title_short'] }}</span>
+
+
      </span>
      <span class="bg-dark text-white" *ngIf="!currentsong['active']" (click)="updateCurrentSong()">not playing</span>
 

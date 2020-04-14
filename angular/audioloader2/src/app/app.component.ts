@@ -36,6 +36,8 @@ export class AppComponent {
 
   isMenuCollapsed = true;
 
+  settings = {}
+
   currentsong = {'title': 'not playing', 'active': false, 'title_short': 'not playing', 'album': '', 'track': '', 'artist': ''};
 
   constructor(private environment: AppConfigService, private http: HttpClient, private modalService: NgbModal, private http2: HttpClient) {
@@ -48,6 +50,15 @@ export class AppComponent {
     if(typeof(localStorage.last_directory) != "undefined"){
       this.last_directory = localStorage.last_directory;
     }
+
+    this.settings['mpd_server'] = localStorage['mpd_server'];
+    this.settings['mpd_port'] = localStorage['mpd_port'];
+    this.settings['stream'] = localStorage['stream'];
+    this.settings['client_id'] = localStorage['client_id'];
+    this.settings['target'] = localStorage['target'];
+
+
+
     this.showDir(this.last_directory);
 
     this.pollCurrentsong();
@@ -60,10 +71,10 @@ export class AppComponent {
 
   pollCurrentsong(){
     this.http2.get<any>(this.servicesBasePath + '/poll_currentsong').subscribe(data => {
-      console.log(data);
+      //console.log(data);
       this.currentsong = data;
       this.currentsong['title_short'] = this.truncate(this.currentsong['title'], 28);
-      console.log(this.currentsong);
+      //console.log(this.currentsong);
       this.pollCurrentsong();
     },
     async error => {
@@ -77,13 +88,13 @@ export class AppComponent {
 
   updateCurrentSong(){
     this.http.get<any>(this.servicesBasePath + '/currentsong').subscribe(data => {
-      console.log(data);
+      //console.log(data);
 
       this.currentsong = data;
 
       this.currentsong['title_short'] = this.truncate(this.currentsong['title'], 28);
       console.log(this.currentsong);
-      //console.log(this.currentsong);
+      console.log(this.currentsong);
     })
 
   };
@@ -188,13 +199,17 @@ export class AppComponent {
 
 
 
-  addDir(dir){
-    console.log("addDir: " + dir);
+  addDir(addObject){
+    console.log("addDir: " + addObject['dir']);
 
 
-    this.http.get<any>(this.servicesBasePath + '/addplay?directory=' + encodeURIComponent(dir)).subscribe(data => {
+    this.http.get<any>(this.servicesBasePath + '/addplay?directory=' + encodeURIComponent(addObject['dir'])).subscribe(data => {
       console.log("enqueued dir ");
       this.sendCommand('play');
+      this.updateCurrentSong();
+      if(addObject['load']){
+        this.openStream();
+      }
 
     })
   };
@@ -209,6 +224,7 @@ export class AppComponent {
 
 
   };
+
 
 
 
@@ -243,7 +259,7 @@ export class AppComponent {
     modalRef.componentInstance.servicesBasePath = this.servicesBasePath;
 
     modalRef.componentInstance.messageEvent.subscribe((receivedEntry) => {
-      console.log("openModal returned: " + receivedEntry);
+      console.log("openModal returned: " + receivedEntry['dir'] + " " + receivedEntry['load']);
       this.addDir(receivedEntry);
     })
 
@@ -252,6 +268,31 @@ export class AppComponent {
  openSettings() {
     console.log("openSettings");
     const modalRefSettings = this.modalService.open(SettingsComponent);
+
+    modalRefSettings.componentInstance.messageEvent.subscribe((receivedEntry) => {
+      console.log("openModal returned: " + receivedEntry);
+      this.settings[receivedEntry] = localStorage[receivedEntry];
+    })
+
+  }
+
+  openStream(){
+    console.log("openStream");
+
+    //http://localhost:5000/kodi?server=192.168.1.51&action=Player.Open&stream=http://192.168.1.185:18080/audio.mp3"
+    this.http.get<any>(this.servicesBasePath + '/kodi?action=Player.Open&server=' + localStorage['target'] + "&stream=" + localStorage['stream']).subscribe(data => {
+      console.log("stream opened ");
+    })
+
+  }
+
+  stopStream(){
+    console.log("stopStream");
+
+    this.http.get<any>(this.servicesBasePath + '/kodi?action=Player.Stop&server=' + localStorage['target'] + "&stream=" + localStorage['stream']).subscribe(data => {
+      console.log("stream stopped");
+    })
+
   }
 
   coverPress(dir){

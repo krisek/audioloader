@@ -93,4 +93,13 @@ input.ng-valid {
   background-color: lightgreen;
 }
 
+.mediabutton {
+  width: 14px;
+
+}
+
+.invert_colors {
+  filter: invert(90%) sepia(40%) brightness(118%) contrast(119%);
+
+}
 

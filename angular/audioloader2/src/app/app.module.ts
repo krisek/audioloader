@@ -12,6 +12,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { SettingsComponent } from './settings/settings.component';
 import { PopupComponent } from './popup/popup.component';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+
 
 
 
@@ -31,6 +33,7 @@ const appInitializerFn = (appConfig: AppConfigService) => {
     CommonModule,
     AppRoutingModule,
     NgbModule,
+    MatSlideToggleModule
   ],
   providers: [
     AppConfigService,

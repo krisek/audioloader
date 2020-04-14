@@ -6,6 +6,7 @@ class Config(object):
   WTF_CSRF_METHODS = []
   MUSIC_DIR = '/media/music/mp3'
   MUSIC_WWW = 'http://192.168.1.185:19000/'
+  MPD_SOCKET = '/tmp/mpd-6600-socket'
   MPD_SERVER = 'localhost'
   MPD_PORT = 6600
   MPD_USER = ''

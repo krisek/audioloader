@@ -18,8 +18,6 @@ from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
 
-# Start with a basic flask app webpage.
-#from flask_socketio import SocketIO, emit
 from flask import Flask, render_template, url_for, copy_current_request_context, jsonify, Response, request, redirect
 import threading
 from threading import Thread, Event
@@ -32,69 +30,17 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(nam
 
 CORS(app)
 
-
-#turn the flask app into a socketio app
-#socketio = SocketIO(app, async_mode='gevent', logger=True, engineio_logger=True)
-
-#random number Generator Thread
-thread = Thread()
-thread_stop_event = Event()
-
-#def mpd_status_check():
-#    mpd_client_status = MPDClient()
-#    mpd_client_status.connect(app.config['MPD_SERVER'], app.config['MPD_PORT'])
-#    while not thread_stop_event.isSet():
-#        mpd_client_status.send_idle()
-
-#        canRead = select([mpd_client_status], [], [], 120)[0]
-
-#        mpd_client_status.noidle()
-
-
-#        currentsong = mpd_client_status.currentsong()
-        #app.logger.debug('got currentsong ' + json.dumps(currentsong))
-#        socketio.emit('songinfo', currentsong , namespace='/mpd')
-
-
-
-#thread = socketio.start_background_task(mpd_status_check)
-
-mpd_client = MPDClient()
-
-mpd_client.timeout = 600
-mpd_client.idletimeout = 600
-mpd_client.connect(app.config['MPD_SERVER'], app.config['MPD_PORT'])
-mpd_client_idle = False
-mpd_status = {}
-
-mpd_client_status_poll = MPDClient()
-mpd_client_status_poll.connect(app.config['MPD_SERVER'], app.config['MPD_PORT'])
-
-
 def mpd_connect():
-    try:
-        mpd_client.ping()
-    except:
-        mpd_client.connect(app.config['MPD_SERVER'], app.config['MPD_PORT'])
-
-
-#def save_status(event):
-#    if not event.exception:
-#        job = scheduler.get_job(event.job_id)
-#        app.logger.debug('task return ' + json.dumps(event.retval))
-#        mpd_status = event.retval
-#    else:
-#        mpd_client.connect(app.config['MPD_SERVER'], app.config['MPD_PORT'])
-
-
-#scheduler = BackgroundScheduler()
-#scheduler.add_listener(save_status, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
-#scheduler.add_job(mpd_connect, 'interval', seconds=60)
-#scheduler.start()
+    mpd_client.connect(app.config['MPD_SOCKET'])
+    return True
 
 @app.route('/cover', methods=['GET', 'POST'])
 def cover():
-    mpd_connect()
+    mpd_client = MPDClient()
+    mpd_client.timeout = 600
+    mpd_client.idletimeout = 600
+    mpd_client.connect(app.config['MPD_SOCKET'])
+
     dir_content = mpd_client.listfiles( request.args.get('directory', ''))
 
     app.logger.debug('got dir_content ' + json.dumps(dir_content))
@@ -122,26 +68,27 @@ def cover():
     if(cover == '' and images):
         cover = images[0]
     if(cover == ''):
-        request_d['fullpath'] = '/static/vinyl.png'
+        request_d['fullpath'] = '/static/assets/vinyl.png'
         request_d['cover'] = 'vinyl.png'
     else:
         request_d['fullpath'] = app.config['MUSIC_WWW']  + request.args.get('directory', '') + '/' + cover
         #request_d['fullpath'] = request_d['fullpath'].replace('//','/')
         request_d['cover'] = cover
+    mpd_client.disconnect()
 
     return redirect(request_d['fullpath'])
-    #return Response(renderfrom nested_lookup import nested_lookup_template('cover.html', data=request_d))
+
 
 
 def process_currentsong(currentsong):
     for state in ['play', 'pause', 'stop']:
         currentsong[state] = False
-        if currentsong['state'] == state:
+        if currentsong.get('state', 'stop') == state:
             currentsong[state] = True
     if 'title' not in currentsong and 'file' in currentsong:
         currentsong['title'] = currentsong['file']
     currentsong['active'] = False
-    if currentsong['state'] in ['play', 'pause']:
+    if currentsong.get('state','stop') in ['play', 'pause']:
         currentsong['active'] = True
     if not currentsong['active']:
         currentsong['title'] = 'not playing'
@@ -150,27 +97,60 @@ def process_currentsong(currentsong):
 
 @app.route('/poll_currentsong', methods=['GET', 'POST'])
 def poll_currentsong():
+    content = {}
+    mpd_client = MPDClient()
 
-    try:
-        mpd_client_status_poll.ping()
-    except:
-        mpd_client_status_poll.connect(app.config['MPD_SERVER'], app.config['MPD_PORT'])
+    mpd_client.timeout = 20000
+    mpd_client.idletimeout = 20000
+    mpd_client.connect(app.config['MPD_SOCKET'])
+    mpd_client.send_idle()
+    app.logger.debug("waiting for mpd_client")
+    select([mpd_client], [], [], 10)[0]
+    mpd_client.noidle()
+    content = mpd_client.currentsong()
+    content.update(mpd_client.status())
+    mpd_client.disconnect()
 
 
-    mpd_client_status_poll.send_idle()
-    app.logger.debug("waiting for mpd_client_status_poll")
-    select([mpd_client_status_poll], [], [], 10)[0]
-    mpd_client_status_poll.noidle()
-    content = mpd_client_status_poll.currentsong()
-    content.update(mpd_client_status_poll.status())
     return jsonify(process_currentsong(content))
+
+@app.route('/kodi', methods=['GET', 'POST'])
+def kodi():
+    server = request.args.get('server', 'localhost')
+    url = 'http://{}:8080/jsonrpc'.format(server)
+    app.logger.debug("kodi called {} {}".format(url, json.dumps(request.args)))
+    proxies = {}
+    kodi_data = {
+            'jsonrpc': '2.0',
+            'id': '1',
+            'method': request.args.get('action', 'Player.Open'),
+            'params': {}
+
+            }
+    if request.args.get('action', 'Player.Stop') == 'Player.Open':
+        kodi_data['params'] = {
+                'item': {
+                    'file': request.args.get('stream', 'http://localhost:18080')
+                }
+            }
+
+    else:
+        kodi_data['params'] = {
+                'playerid': 0
+            }
+
+
+    app.logger.debug("kodi calling {}".format(jsonify(kodi_data)))
+    r = requests.post(url, headers={'Content-type': 'application/json'}, verify=False, proxies=proxies, json=kodi_data)
+    app.logger.debug("subscribe request returned {} {}".format(r.status_code, r.text))
+    return r.text
+
 
 
 
 @app.route('/listfiles', methods=['GET', 'POST'])
 @app.route('/lsinfo', methods=['GET', 'POST'])
 @app.route('/ls', methods=['GET', 'POST'])
-@app.route('/count', methods=['GET', 'POST'])
 @app.route('/search', methods=['GET', 'POST'])
 @app.route('/addplay', methods=['GET', 'POST'])
 @app.route('/play', methods=['GET', 'POST'])
@@ -180,94 +160,106 @@ def poll_currentsong():
 @app.route('/stop', methods=['GET', 'POST'])
 @app.route('/status', methods=['GET', 'POST'])
 @app.route('/currentsong', methods=['GET', 'POST'])
+@app.route('/count', methods=['GET', 'POST'])
+
 
 def mpd_proxy():
-
-    if(request.path != '/count'):
-        mpd_connect()
-
-
     content = {}
-    app.logger.debug('got ' + request.path)
-    if(request.path == '/listfiles'):
-        content['tree'] = mpd_client.listfiles( request.args.get('directory', '.'))
-    elif(request.path == '/lsinfo'):
-        content['tree'] = mpd_client.lsinfo( request.args.get('directory', '.'))
-    elif(request.path == '/search'):
-        content['tree'] = []
-        search_result = mpd_client.search('Any', request.args.get('pattern', 'ugar'))
-        result_directories = {}
-        for elem in search_result:
-            result_directories[os.path.dirname(elem['file'])] = 1
-        for directory in result_directories:
-            content['tree'].append({'directory': directory})
-        for i, name in enumerate(content['tree'], start=0):
-            if 'directory' in name:
-                sub_dir = name['directory']
-                sub_dir_count = mpd_client.count('base', sub_dir)
-                sub_dir_count['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(sub_dir_count['playtime']))))
-                name['count'] = sub_dir_count
+    try:
+        mpd_client = MPDClient()
 
-    elif(request.path == '/ls'):
-        directory = request.args.get('directory', '.');
+        mpd_client.timeout = 600
+        mpd_client.idletimeout = 600
+        mpd_client.connect(app.config['MPD_SOCKET'])
+        app.logger.debug('got ' + request.path)
+        if(request.path == '/listfiles'):
+            content['tree'] = mpd_client.listfiles( request.args.get('directory', '.'))
+        elif(request.path == '/lsinfo'):
+            content['tree'] = mpd_client.lsinfo( request.args.get('directory', '.'))
+        elif(request.path == '/count'):
+            content = mpd_client.count('base', request.args.get('directory', '.'))
+            content['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(content['playtime']))))
+            content['name'] = request.args.get('directory', '')
+        elif(request.path == '/search'):
+            content['tree'] = []
+            search_result = mpd_client.search('Any', request.args.get('pattern', 'ugar'))
+            result_directories = {}
+            for elem in search_result:
+                result_directories[os.path.dirname(elem['file'])] = 1
+            for directory in result_directories:
+                content['tree'].append({'directory': directory})
+            for i, name in enumerate(content['tree'], start=0):
+                if 'directory' in name:
+                    sub_dir = name['directory']
+                    sub_dir_count = mpd_client.count('base', sub_dir)
+                    sub_dir_count['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(sub_dir_count['playtime']))))
+                    name['count'] = sub_dir_count
 
-        listfiles = mpd_client.listfiles( directory )
-        if(directory == '.'):
-            directory = '/'
+        elif(request.path == '/ls'):
+            directory = request.args.get('directory', '.');
 
-        lsinfo = mpd_client.lsinfo( directory)
-        if directory != '/':
-            count = mpd_client.count('base', directory)
-        else:
-            count = {}
-        music_files = nested_lookup(key='file', document = lsinfo)
-        music_files = list(map(os.path.basename ,music_files))
+            listfiles = mpd_client.listfiles( directory )
+            if(directory == '.'):
+                directory = '/'
 
-        for file_record in listfiles:
-            if('file' not in file_record):
-                continue
-            #app.logger.debug('file_record ' + file_record['file'])
-            if(file_record.get('file','') not in music_files):
-                file_record['file'] = directory + '/' + file_record['file']
-                lsinfo.append(file_record)
-        content['tree'] = lsinfo
-        content['info'] = count
+            lsinfo = mpd_client.lsinfo( directory)
+            if directory != '/':
+                count = mpd_client.count('base', directory)
+            else:
+                count = {}
+            music_files = nested_lookup(key='file', document = lsinfo)
+            music_files = list(map(os.path.basename ,music_files))
 
-        for i, name in enumerate(content['tree'], start=0):
-            if 'directory' in name:
-                sub_dir = name['directory']
-                sub_dir_count = mpd_client.count('base', sub_dir)
-                sub_dir_count['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(sub_dir_count.get('playtime',0)))))
-                name['count'] = sub_dir_count
+            for file_record in listfiles:
+                if('file' not in file_record):
+                    continue
+                #app.logger.debug('file_record ' + file_record['file'])
+                if(file_record.get('file','') not in music_files):
+                    file_record['file'] = directory + '/' + file_record['file']
+                    lsinfo.append(file_record)
+            content['tree'] = lsinfo
+            content['info'] = count
+
+            for i, name in enumerate(content['tree'], start=0):
+                if 'directory' in name:
+                    sub_dir = name['directory']
+                    sub_dir_count = mpd_client.count('base', sub_dir)
+                    sub_dir_count['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(sub_dir_count.get('playtime',0)))))
+                    name['count'] = sub_dir_count
 
 
 
-    elif(request.path == '/count'):
-        content = mpd_client.count('base', request.args.get('directory', '.'))
-        content['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(content['playtime']))))
-        content['name'] = request.args.get('directory', '')
-    elif(request.path == '/addplay'):
-        mpd_client.add('signal.mp3')
-        content = mpd_client.add(request.args.get('directory', '.'))
-        content = mpd_client.play()
-    elif(request.path == '/play'):
-        content = mpd_client.play()
-    elif(request.path == '/pause'):
-        content = mpd_client.pause()
-    elif(request.path == '/next'):
-        content = mpd_client.next()
-    elif(request.path == '/prev'):
-        content = mpd_client.previous()
-    elif(request.path == '/stop'):
-        content = mpd_client.clear()
-    elif(request.path == '/playpause'):
-       app.logger.debug('todo')
-    elif(request.path == '/status'):
-        content = mpd_client.status()
-    elif(request.path == '/currentsong'):
-        content = mpd_client.currentsong()
-        content.update(mpd_client.status())
-        content = process_currentsong(content)
+        elif(request.path == '/count'):
+            content = mpd_client.count('base', request.args.get('directory', '.'))
+            content['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(content['playtime']))))
+            content['name'] = request.args.get('directory', '')
+        elif(request.path == '/addplay'):
+            mpd_client.add('signal.mp3')
+            content = mpd_client.add(request.args.get('directory', '.'))
+            content = mpd_client.play()
+        elif(request.path == '/play'):
+            content = mpd_client.play()
+        elif(request.path == '/pause'):
+            content = mpd_client.pause()
+        elif(request.path == '/next'):
+            content = mpd_client.next()
+        elif(request.path == '/prev'):
+            content = mpd_client.previous()
+        elif(request.path == '/stop'):
+            content = mpd_client.clear()
+        elif(request.path == '/playpause'):
+           app.logger.debug('todo')
+        elif(request.path == '/status'):
+            content = mpd_client.status()
+        elif(request.path == '/currentsong'):
+            content = mpd_client.currentsong()
+            content.update(mpd_client.status())
+            content = process_currentsong(content)
+        mpd_client.disconnect()
+
+    except Exception as e:
+        app.logger.debug('exception on mod_proxy ' + str(e))
+
     return jsonify(content)
 
 

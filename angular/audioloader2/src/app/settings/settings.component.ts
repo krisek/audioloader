@@ -12,6 +12,8 @@ import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
   styleUrls: ['./settings.component.css']
 })
 export class SettingsComponent {
+   @Output() messageEvent = new EventEmitter<string>();
+
   mpd_server = "";
   mpd_port = "";
   stream = "";
@@ -40,6 +42,7 @@ export class SettingsComponent {
       if(variable == "stream") localStorage.stream = this.stream;
       if(variable == "client_id") localStorage.client_id = this.client_id;
       if(variable == "target") localStorage.target = this.target;
+      this.messageEvent.emit(variable);
   };
 
 
