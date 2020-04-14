@@ -9,6 +9,7 @@
       Stream from (in MPD config): <input id="stream" class="form-control" placeholder="http://box.lxs.cloud:18080" name="stream" [value]="stream" (input)="stream = $event.target.value; update('stream')" onfocus="this.select();"><br/>
       Client: <input id="client_id" class="form-control" placeholder="x" name="client_id" [value]="client_id" (input)="client_id = $event.target.value; update('client_id')" onfocus="this.select();"><br/>
       Kodi server: <input id="target" class="form-control" placeholder="kodi" name="target" [value]="target" (input)="target = $event.target.value; update('target')" onfocus="this.select();"><br/><br/>
+      Log level: <input id="log" class="form-control" placeholder="debug" name="log" [value]="log" (input)="log = $event.target.value; update('log')" onfocus="this.select();"><br/><br/>
 
     </div>
     <div class="modal-footer">

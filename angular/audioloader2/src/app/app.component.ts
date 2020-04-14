@@ -56,6 +56,7 @@ export class AppComponent {
     this.settings['stream'] = localStorage['stream'];
     this.settings['client_id'] = localStorage['client_id'];
     this.settings['target'] = localStorage['target'];
+    this.settings['log'] = localStorage['log'];
 
 
 
@@ -74,7 +75,9 @@ export class AppComponent {
       //console.log(data);
       this.currentsong = data;
       this.currentsong['title_short'] = this.truncate(this.currentsong['title'], 28);
-      //console.log(this.currentsong);
+      if(this.settings['log'] == 'debug'){
+          console.log(this.currentsong);
+      }
       this.pollCurrentsong();
     },
     async error => {

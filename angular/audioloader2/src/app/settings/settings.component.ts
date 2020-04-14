@@ -19,6 +19,7 @@ export class SettingsComponent {
   stream = "";
   client_id = "";
   target = "";
+  log = "";
 
 
   constructor(public activeModal: NgbModal) {}
@@ -32,6 +33,7 @@ export class SettingsComponent {
     if(typeof(localStorage.stream) != "undefined") this.stream = localStorage.stream;
     if(typeof(localStorage.client_id) != "undefined") this.client_id = localStorage.client_id;
     if(typeof(localStorage.target) != "undefined") this.target = localStorage.target;
+    if(typeof(localStorage.log) != "undefined") this.log = localStorage.log;
 
 
   };
@@ -42,6 +44,7 @@ export class SettingsComponent {
       if(variable == "stream") localStorage.stream = this.stream;
       if(variable == "client_id") localStorage.client_id = this.client_id;
       if(variable == "target") localStorage.target = this.target;
+      if(variable == "log") localStorage.log = this.log;
       this.messageEvent.emit(variable);
   };
 

@@ -234,6 +234,7 @@ def mpd_proxy():
             content['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(content['playtime']))))
             content['name'] = request.args.get('directory', '')
         elif(request.path == '/addplay'):
+            mpd_client.consume(1)
             mpd_client.add('signal.mp3')
             content = mpd_client.add(request.args.get('directory', '.'))
             content = mpd_client.play()
