@@ -97,7 +97,6 @@ export class AppComponent {
 
       this.currentsong['title_short'] = this.truncate(this.currentsong['title'], 28);
       console.log(this.currentsong);
-      console.log(this.currentsong);
     })
 
   };

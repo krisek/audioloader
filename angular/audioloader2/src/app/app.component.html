@@ -31,10 +31,9 @@
      <span class="bg-dark text-white" type="button">dash</span> |
 
      <span *ngIf="currentsong['active']">
-        <span class="bg-dark text-white" type="button" (click)="openStream()"><img class="mediabutton invert_colors" src="assets/music-cd.svg" title="load stream" /></span>&nbsp;
-        <span class="bg-dark text-white" type="button" (click)="stopStream()"><img class="mediabutton invert_colors" src="assets/stop.svg" title="stop stream" /></span>
-        <span class="bg-dark text-white" type="button" *ngIf="currentsong['pause']" (click)="sendCommand('play')"><img class="mediabutton invert_colors" src="assets/play.svg" title="paused ➙ play" /></span>&nbsp;
-        <span class="bg-dark text-white" type="button" *ngIf="currentsong['play']"  (click)="sendCommand('pause')"><img class="mediabutton invert_colors"   src="assets/pause.svg" title="playing ➙ pause"/></span>&nbsp;
+        <span class="bg-dark text-white" type="button"  (click)="openStream()"><img class="mediabutton invert_colors" src="assets/music-cd.svg" title="load stream" /></span>&nbsp;
+        <span class="bg-dark text-white" type="button" (click)="stopStream()"><img class="mediabutton invert_colors" src="assets/stop.svg" title="stop stream" /></span>&nbsp;
+        <span class="bg-dark text-white" type="button" *ngIf="currentsong['next_state']" (click)="sendCommand(currentsong['next_state'])"><img class="mediabutton invert_colors" src="assets/{{ currentsong['next_state'] }}.svg" title="{{ currentsong['next_title'] }}"/></span>&nbsp;
         <span class="bg-dark text-white" type="button"  (click)="sendCommand('stop')"><img  class="mediabutton invert_colors" src="assets/stop.svg" title="stop"/></span>&nbsp;
         <span class="bg-dark text-white" type="button"  (click)="sendCommand('prev')" ><img class="mediabutton invert_colors" src="assets/next.svg"  title="prev"  style="transform: rotate(180deg);"/></span>&nbsp;
         <span class="bg-dark text-white" type="button"  (click)="sendCommand('next')"><img class="mediabutton  invert_colors" src="assets/next.svg" title="next" /></span>&nbsp;
@@ -105,8 +104,8 @@
               <img  src="{{ servicesBasePath }}/cover?directory={{ encoded }}" height="92" title="{{ title }}" class="album-cover-img" class="album-cover-img" type="button" class="btn" data-toggle="modal" data-target="#exampleModal" (click)="openModal(dir)"/>
             </div>
             <span class="" *ngFor="let file of tree_file | keyvalue">
-                <span *ngIf="file.value.duration">{{file.value.track}}  -  {{file.value.title}} ({{file.value.duration}})</span>
-                <span *ngIf="!file.value.duration">{{file.value.title}}</span>
+                <span *ngIf="file.value.track">{{file.value.track}}  -  {{file.value.title}} ({{file.value.duration}})</span>
+                <span *ngIf="!file.value.track">{{file.value.title}}</span>
                 <br/>
             </span>
 

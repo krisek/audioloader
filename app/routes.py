@@ -92,6 +92,14 @@ def process_currentsong(currentsong):
         currentsong['active'] = True
     if not currentsong['active']:
         currentsong['title'] = 'not playing'
+    if currentsong['state'] == 'play':
+        currentsong['next_state'] = 'pause'
+        currentsong['next_title'] = 'playing ➙ pause'
+    if currentsong['state'] == 'pause':
+        currentsong['next_state'] = 'play'
+        currentsong['next_title'] = 'paused ➙ play'
+
+
     return currentsong
 
 
@@ -105,7 +113,7 @@ def poll_currentsong():
     mpd_client.connect(app.config['MPD_SOCKET'])
     mpd_client.send_idle()
     app.logger.debug("waiting for mpd_client")
-    select([mpd_client], [], [], 10)[0]
+    select([mpd_client], [], [], 5)[0]
     mpd_client.noidle()
     content = mpd_client.currentsong()
     content.update(mpd_client.status())
