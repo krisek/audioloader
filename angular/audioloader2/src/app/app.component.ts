@@ -4,9 +4,12 @@ import { CommonModule } from '@angular/common';
 import { AppConfigService } from './app-config-service.service';
 import { SettingsComponent } from './settings/settings.component';
 import { PopupComponent } from './popup/popup.component';
+import { ToastComponent } from './toast/toast.component';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
 import { trigger, state, style, animate, transition } from '@angular/animations';
+
+import { ToastService } from './toast-service.service';
 
 @Component({
   selector: 'app-root',
@@ -76,7 +79,7 @@ export class AppComponent {
 
   currentsong = {'title': 'not playing', 'active': false, 'title_short': 'not playing', 'album': '', 'track': '', 'artist': ''};
 
-  constructor(private environment: AppConfigService, private http: HttpClient, private modalService: NgbModal, private http2: HttpClient) {
+  constructor(private environment: AppConfigService, private http: HttpClient, private modalService: NgbModal, private http2: HttpClient, public toastService: ToastService) {
     this.servicesBasePath = environment.config.servicesBasePath;
     }
 
@@ -127,6 +130,7 @@ export class AppComponent {
 
   updateCurrentSong(){
     this.loading['currentsong'] = true;
+
     this.http.get<any>(this.servicesBasePath + '/currentsong').subscribe(data => {
       //console.log(data);
 
@@ -138,6 +142,13 @@ export class AppComponent {
 
   };
 
+  showSuccess(text) {
+    this.toastService.show(text, { classname: 'bg-success text-light', delay: 2000 });
+  }
+
+  showDanger(text) {
+    this.toastService.show(text, { classname: 'bg-danger text-light', delay: 5000 });
+  }
 
   displayTree(data){
     console.log('displayTree called');
@@ -244,6 +255,7 @@ export class AppComponent {
 
     this.http.get<any>(this.servicesBasePath + '/addplay?directory=' + encodeURIComponent(addObject['dir'])).subscribe(data => {
       console.log("enqueued dir ");
+      this.showSuccess('loaded ' + this.truncate(this.baseName(addObject['dir']), 10))
       this.sendCommand('play');
       this.updateCurrentSong();
       if(addObject['load']){
@@ -323,6 +335,11 @@ export class AppComponent {
     this.http.get<any>(this.servicesBasePath + '/kodi?action=Player.Open&server=' + localStorage['target'] + "&stream=" + localStorage['stream']).subscribe(data => {
       this.loading['kodiload'] = false;
       console.log("stream opened ");
+      this.showSuccess('loaded to kodi');
+    },
+    async error => {
+      console.log('error open stream');
+      this.showDanger('error loading to kodi');
     })
 
   }
@@ -334,6 +351,7 @@ export class AppComponent {
     this.http.get<any>(this.servicesBasePath + '/kodi?action=Player.Stop&server=' + localStorage['target'] + "&stream=" + localStorage['stream']).subscribe(data => {
       this.loading['kodistop'] = false;
       console.log("stream stopped");
+      this.showSuccess('unloaded from kodi');
     })
 
   }

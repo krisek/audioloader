@@ -16,6 +16,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { ToastService } from './toast-service.service';
+import { ToastComponent } from './toast/toast.component';
 
 
 const appInitializerFn = (appConfig: AppConfigService) => {
@@ -26,7 +28,7 @@ const appInitializerFn = (appConfig: AppConfigService) => {
 
 @NgModule({
   declarations: [
-    AppComponent, SettingsComponent, PopupComponent
+    AppComponent, SettingsComponent, PopupComponent, ToastComponent
   ],
   imports: [
     BrowserModule,
@@ -43,10 +45,10 @@ const appInitializerFn = (appConfig: AppConfigService) => {
             provide: APP_INITIALIZER,
             useFactory: appInitializerFn,
             multi: true,
-            deps: [AppConfigService]
+            deps: [AppConfigService, ToastService]
         }
   ],
   bootstrap: [AppComponent],
-  entryComponents: [ SettingsComponent, PopupComponent ]
+  entryComponents: [ SettingsComponent, PopupComponent, ToastComponent ]
 })
 export class AppModule { }
