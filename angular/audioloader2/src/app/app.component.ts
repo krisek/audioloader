@@ -258,7 +258,7 @@ export class AppComponent {
     this.loading[command] = true;
 
     this.http.get<any>(this.servicesBasePath + '/' + command).subscribe(data => {
-      console.log("returned");
+      console.log("returned " + command);
       this.loading[command] = false;
       })
 
