@@ -10,3 +10,22 @@
   font-weight: bold;
   font-size: 20px;
 }
+
+
+@media (min-width:0px;) and (max-width: 767px) {
+   .navbar-collapse {
+        padding-left: 200px;
+   }
+}
+
+@media (min-width: 768px) {
+ .navbar-collapse {
+        padding-left: 0;
+   }
+  .navbar {
+    padding-left: 4em;
+    padding-right: 4em;
+
+  }
+
+}

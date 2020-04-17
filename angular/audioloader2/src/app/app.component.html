@@ -1,40 +1,49 @@
 <body>
-  <header>
+<main role="main">
+<ul ngbNav #nav="ngbNav" [activeId]="3" class="navbar navbar-light navbar-expand-lg mg-3 justify-content-between">
+  <li [ngbNavItem]="1">
+    <span class="bg-light" type="button" (click)="showDir('.')">dir</span>&nbsp;&nbsp;
+  </li>
+  <li [ngbNavItem]="2">
+    <span class="bg-light" type="button">dash</span>&nbsp;&nbsp;
+  </li>
+  <li [ngbNavItem]="3">
+    <span *ngIf="currentsong['active']" >
+     <span class="bg-light" type="button"  (click)="openStream()"><img class="mediabutton icc" [@loadingTrigger]="loading['kodiload'] ? 'loading' : 'normal'" src="assets/music-cd.svg" title="load stream" /></span>&nbsp;
+        <span class="bg-light" type="button" (click)="stopStream()"><img class="mediabutton icc" [@loadingTrigger]="loading['kodistop'] ? 'loading' : 'normal'" src="assets/stop.svg" title="stop stream" /></span>&nbsp;
+        <span class="bg-light" type="button" *ngIf="currentsong['next_state']" (click)="sendCommand(currentsong['next_state'])"><img class="mediabutton icc" src="assets/{{ currentsong['next_state'] }}.svg" title="{{ currentsong['next_title'] }}"/></span>&nbsp;
+        <span class="bg-light" type="button"  (click)="sendCommand('stop')"><img  class="mediabutton icc" [@loadingTrigger]="loading['stop'] ? 'loading' : 'normal'" src="assets/stop.svg" title="stop"/></span>&nbsp;
+        <span class="bg-light" type="button"  (click)="sendCommand('prev')" ><img class="mediabutton icc" [@loadingTrigger]="loading['prev'] ? 'loading' : 'normal'" src="assets/next.svg"  title="prev"  style="transform: rotate(180deg);"/></span>&nbsp;
+        <span class="bg-light" type="button"  (click)="sendCommand('next')"><img class="mediabutton  icc" [@loadingTrigger]="loading['next'] ? 'loading' : 'normal'" src="assets/next.svg" title="next" /></span>&nbsp;
+        <span class="bg-light" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" *ngIf="currentsong['track']" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{currentsong['track']}} - </span>
+        <span class="bg-light" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{ currentsong['title_short'] }}</span>
+  </span>
+   <span class="bg-light" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" *ngIf="!currentsong['active']" (click)="updateCurrentSong()">not playing</span>&nbsp;&nbsp;
+  </li>
 
+  <li ngbNavItem class="ml-auto">
+    <button class="navbar-toggler" type="button" (click)="isMenuCollapsed = !isMenuCollapsed">
+    &#9776;
+  </button>
 
-  <div class="navbar fixed-top navbar-light bg-light shadow-sm">
-    <div class="container d-flex justify-content-between">
-     <div>
-     <span class="bg-light text-black" type="button" (click)="showDir('.')">dir</span> |
-     <span class="bg-light text-black" type="button">dash</span> |
-
-     <span *ngIf="currentsong['active']">
-        <span class="bg-light text-black" type="button"  (click)="openStream()"><img class="mediabutton icc" [@loadingTrigger]="loading['kodiload'] ? 'loading' : 'normal'" src="assets/music-cd.svg" title="load stream" /></span>&nbsp;
-        <span class="bg-light text-black" type="button" (click)="stopStream()"><img class="mediabutton icc" [@loadingTrigger]="loading['kodistop'] ? 'loading' : 'normal'" src="assets/stop.svg" title="stop stream" /></span>&nbsp;
-        <span class="bg-light text-black" type="button" *ngIf="currentsong['next_state']" (click)="sendCommand(currentsong['next_state'])"><img class="mediabutton icc" src="assets/{{ currentsong['next_state'] }}.svg" title="{{ currentsong['next_title'] }}"/></span>&nbsp;
-        <span class="bg-light text-black" type="button"  (click)="sendCommand('stop')"><img  class="mediabutton icc" [@loadingTrigger]="loading['stop'] ? 'loading' : 'normal'" src="assets/stop.svg" title="stop"/></span>&nbsp;
-        <span class="bg-light text-black" type="button"  (click)="sendCommand('prev')" ><img class="mediabutton icc" [@loadingTrigger]="loading['prev'] ? 'loading' : 'normal'" src="assets/next.svg"  title="prev"  style="transform: rotate(180deg);"/></span>&nbsp;
-        <span class="bg-light text-black" type="button"  (click)="sendCommand('next')"><img class="mediabutton  icc" [@loadingTrigger]="loading['next'] ? 'loading' : 'normal'" src="assets/next.svg" title="next" /></span>&nbsp;
-        <span class="bg-light text-black" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" *ngIf="currentsong['track']" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{currentsong['track']}} - </span>
-        <span class="bg-light text-black" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{ currentsong['title_short'] }}</span>
-
-
-     </span>
-     <span class="bg-light text-black" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" *ngIf="!currentsong['active']" (click)="updateCurrentSong()">not playing</span>
-
-     </div>
-
-
-      <form class="form-inline my-2 my-lg-0"><input type="text" class="form-control form-inline" placeholder="search..." name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target.value; searchItem($event.target.value)" onfocus="this.select();" onmouseup="return false;"> &nbsp;&nbsp;&nbsp;
-
-      <img class="icc" type="button" src="assets/settings.svg" title="settings" (click)="openSettings()" width="20px"/>&nbsp;&nbsp;
-      </form>
-
-    </div>
+  <!-- Step 2: Add the ngbCollapse directive to the element below. -->
+  <div [ngbCollapse]="isMenuCollapsed" class="collapse navbar-collapse">
+    <ul class="navbar-nav">
+      <li class="nav-item active" >
+        <!-- Step 4: Close the menu when a link is clicked. -->
+       <form class="form-inline my-2 my-lg-0">
+      <input class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="search..." name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target.value; searchItem($event.target.value)" onfocus="this.select();" onmouseup="return false;">
+      <img class="icc  my-2 my-sm-0" type="button" src="assets/settings.svg" title="settings" (click)="openSettings()" width="20px"/>
+    </form>
+      </li>
+    </ul>
   </div>
-</header>
 
-<main role="main" style="padding-top: 1.8em;">
+
+
+  </li>
+</ul>
+
 
 <div class="album py-5 bg-light">
   <div class="container">
