@@ -6,15 +6,51 @@ import { SettingsComponent } from './settings/settings.component';
 import { PopupComponent } from './popup/popup.component';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
-
+import { trigger, state, style, animate, transition } from '@angular/animations';
 
 @Component({
   selector: 'app-root',
+  animations: [
+    trigger('loadingTrigger', [
+      state('normal', style({
+        //backgroundColor: 'yellow'
+      })),
+      state('loading', style({
+        color: '#c0c0c0',
+        background: '#555555',
+        backgroundColor: '#555555'
+
+      })),
+      transition('normal => loading', [
+        animate('1s')
+      ]),
+      transition('loading => normal', [
+        animate('1s')
+      ]),
+    ]),
+
+
+
+  ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
   //title = 'audioloader2';
+
+
+  loading = {
+    'kodiload': false,
+    'kodistop': false,
+    'play': false,
+    'pause': false,
+    'stop': false,
+    'prev': false,
+    'next': false,
+    'currentsong': false
+  }
+
+
 
   last_directory = '.';
 
@@ -90,11 +126,12 @@ export class AppComponent {
   };
 
   updateCurrentSong(){
+    this.loading['currentsong'] = true;
     this.http.get<any>(this.servicesBasePath + '/currentsong').subscribe(data => {
       //console.log(data);
 
       this.currentsong = data;
-
+      this.loading['currentsong'] = false;
       this.currentsong['title_short'] = this.truncate(this.currentsong['title'], 28);
       console.log(this.currentsong);
     })
@@ -218,10 +255,11 @@ export class AppComponent {
 
   sendCommand(command){
     console.log("sendCommand: " + command);
-
+    this.loading[command] = true;
 
     this.http.get<any>(this.servicesBasePath + '/' + command).subscribe(data => {
       console.log("returned");
+      this.loading[command] = false;
       })
 
 
@@ -280,9 +318,10 @@ export class AppComponent {
 
   openStream(){
     console.log("openStream");
-
+    this.loading['kodiload'] = true;
     //http://localhost:5000/kodi?server=192.168.1.51&action=Player.Open&stream=http://192.168.1.185:18080/audio.mp3"
     this.http.get<any>(this.servicesBasePath + '/kodi?action=Player.Open&server=' + localStorage['target'] + "&stream=" + localStorage['stream']).subscribe(data => {
+      this.loading['kodiload'] = false;
       console.log("stream opened ");
     })
 
@@ -290,8 +329,10 @@ export class AppComponent {
 
   stopStream(){
     console.log("stopStream");
+        this.loading['kodistop'] = true;
 
     this.http.get<any>(this.servicesBasePath + '/kodi?action=Player.Stop&server=' + localStorage['target'] + "&stream=" + localStorage['stream']).subscribe(data => {
+      this.loading['kodistop'] = false;
       console.log("stream stopped");
     })
 

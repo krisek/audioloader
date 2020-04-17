@@ -14,6 +14,7 @@ import { SettingsComponent } from './settings/settings.component';
 import { PopupComponent } from './popup/popup.component';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 
 
@@ -33,7 +34,8 @@ const appInitializerFn = (appConfig: AppConfigService) => {
     CommonModule,
     AppRoutingModule,
     NgbModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    BrowserAnimationsModule
   ],
   providers: [
     AppConfigService,
