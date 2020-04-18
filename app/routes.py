@@ -342,7 +342,7 @@ def mpd_proxy():
             content = mpd_client.play()
             #manage history
             client_id = request.args.get('client_id', '')
-            client_history = read_history(client_id)
+            client_history = read_data(client_id)
 
             #first try to find dir in client_history
             if directory in client_history['history']:

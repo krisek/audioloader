@@ -323,6 +323,8 @@ export class AppComponent {
     this.http.get<any>(this.servicesBasePath + '/addplay?directory=' + encodeURIComponent(addObject['dir']) + '&client_id=' + this.settings['client_id']  ).subscribe(data => {
       console.log("enqueued dir ");
       this.showSuccess('loaded ' + this.truncate(this.baseName(addObject['dir']), 10))
+      this.updateSpec('history');
+
       this.updateCurrentSong();
       if(addObject['load']){
         this.openStream();
