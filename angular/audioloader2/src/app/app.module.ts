@@ -18,6 +18,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ToastService } from './toast-service.service';
 import { ToastComponent } from './toast/toast.component';
+import { AlbumcellComponent } from './albumcell/albumcell.component';
 
 
 const appInitializerFn = (appConfig: AppConfigService) => {
@@ -28,7 +29,7 @@ const appInitializerFn = (appConfig: AppConfigService) => {
 
 @NgModule({
   declarations: [
-    AppComponent, SettingsComponent, PopupComponent, ToastComponent
+    AppComponent, SettingsComponent, PopupComponent, ToastComponent, AlbumcellComponent
   ],
   imports: [
     BrowserModule,
@@ -49,6 +50,6 @@ const appInitializerFn = (appConfig: AppConfigService) => {
         }
   ],
   bootstrap: [AppComponent],
-  entryComponents: [ SettingsComponent, PopupComponent, ToastComponent ]
+  entryComponents: [ SettingsComponent, PopupComponent, ToastComponent, AlbumcellComponent ]
 })
 export class AppModule { }

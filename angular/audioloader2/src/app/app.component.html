@@ -5,10 +5,10 @@
 <main role="main">
 <ul ngbNav #nav="ngbNav" [activeId]="3" class="navbar navbar-light bg-light navbar-expand-lg mg-3 justify-content-between">
   <li [ngbNavItem]="1">
-    <span class="bg-light" type="button" (click)="showDir('.')">dir</span>&nbsp;&nbsp;
+    <span class="bg-light" type="button" (click)="showDir(dir)">dir</span>&nbsp;&nbsp;
   </li>
   <li [ngbNavItem]="2">
-    <span class="bg-light" type="button">dash</span>&nbsp;&nbsp;
+    <span class="bg-light" type="button" (click)="showDash()">dash</span>&nbsp;&nbsp;
   </li>
   <li [ngbNavItem]="3">
     <span *ngIf="currentsong['active']" >
@@ -52,7 +52,7 @@
   <div class="container">
     <div class="row">
       <div class="col-sm-12" id="navarea">
-
+        <ng-container *ngIf="!dash">
         <span *ngFor="let elem of path">/<a href="#" (click)="showDir(elem.dir)">{{ elem.name }}</a></span>&nbsp;&nbsp;
         <a href="#" class="play" (click)="openModal(dir)" class="albumlink"><svg width="9px" height="9px" viewBox="0 0 31 31" xmlns="http://www.w3.org/2000/svg"><path d="M 1 1 L 1 30 L 30 15 z" fill="Black" stroke="Grey" stroke-width="2"/></svg></a>
         <span *ngIf="lookfor">&nbsp;&nbsp;|&nbsp;<a href="#" (click)="searchItem(lookfor)">{{ lookfor }}</a></span>
@@ -60,18 +60,7 @@
         <br/>
         <ng-container *ngIf="!showlist">
         <div style="max-width: 100px;" class="album-cover inline-block" *ngFor="let elem of list_dir" >
-          <div class="outer_shadow">
-            <div class="album-cover-frame">
-              <img src="{{ servicesBasePath }}/cover?directory={{ tree_dir[elem].encoded }}" height="92" title="{{ tree_dir[elem].name }} ({{ tree_dir[elem].playhours }})" class="album-cover-img" type="button" class="btn" data-toggle="modal" data-target="#exampleModal" (click)="coverPress(tree_dir[elem].name)" />
-            </div>
-            <div class="album-title">
-              <span class="albumlink">
-              <a href="#" class="togglestar albumlink">☐</a>
-              <a href="#" class="play" (click)="openModal(tree_dir[elem].name)" class="albumlink"><svg width="9px" height="9px" viewBox="0 0 31 31" xmlns="http://www.w3.org/2000/svg"><path d="M 1 1 L 1 30 L 30 15 z" fill="Black" stroke="Grey" stroke-width="2"/></svg></a>
-              <a href="#" (click)="showDir(tree_dir[elem].name)" title="{{ tree_dir[elem].name }} ({{ tree_dir[elem].playhours }})" class="albumlink">{{ tree_dir[elem].short }} ({{ tree_dir[elem].playhours }})</a>
-              </span>
-            </div>
-          </div>
+          <app-albumcell [album]="tree_dir[elem]" [servicesBasePath]="servicesBasePath" [area]="active_area" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
         </div>
         </ng-container>
         <ng-container *ngIf="showlist">
@@ -99,8 +88,26 @@
 
           </ng-container>
         </div>
+        </ng-container>
+        <ng-container *ngIf="dash">
+          <div class="row">
+           <div class="col-11 col-sm-10 col-md-9 col-lg-9 col-xl-9" id="div-randomset">
+           <div style="max-width: 100px;" class="album-cover inline-block" *ngFor="let elem of list_dir_dash['randomset']" >
+            <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
+          </div><br/>
+          <span type="button" (click)="newSet()">new set</span><br/>
 
+          <hr>
+          </div>
+           <div class="col-1 col-sm-2 col-md-3 col-lg-3 col-xl-3" id="div-history2">
 
+          <div style="max-width: 100px;" class="album-cover inline-block" *ngFor="let elem of list_dir_dash['history']" >
+            <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
+          </div>
+          </div>
+
+          </div>
+        </ng-container>
 
       </div>
     </div>
@@ -111,8 +118,8 @@
 
 <footer class="text-muted">
   <div class="container">
-    <p class="float-right">
-      <a href="#">Back to top</a>
+    <p class="float-bottom"><small>
+      <a href="#">Back to top</a></small>
     </p>
   </div>
 </footer>

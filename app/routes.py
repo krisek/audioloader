@@ -25,6 +25,9 @@ from threading import Thread, Event
 from flask_cors import CORS
 
 from select import select
+from random import choices
+
+import traceback
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
 
@@ -153,6 +156,97 @@ def kodi():
     app.logger.debug("subscribe request returned {} {}".format(r.status_code, r.text))
     return r.text
 
+@app.route('/generate_randomset', methods=['GET', 'POST'])
+def generate_randomset():
+    client_id = request.args.get('client_id', '')
+    
+    client_data = {
+        'randomset': []
+    }
+    try:
+        mpd_client = MPDClient()
+
+        mpd_client.timeout = 600
+        mpd_client.idletimeout = 600
+        mpd_client.connect(app.config['MPD_SOCKET'])
+        albums = mpd_client.list('album')
+        randomset = choices(albums, k=12)
+        for album in randomset:
+            try:
+                album_data = mpd_client.search('album', album['album'])
+                client_data['randomset'].append(os.path.dirname(album_data[0]['file']))
+            except Exception as e:
+                app.logger.debug("failed to add album to randomset " + album['album'] + " error:" + str(e))
+        mpd_client.disconnect()
+        client_data_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.randomset.json')
+
+        if client_id != '' and client_data_file.startswith(app.config['CLIENT_DB']) and re.search(r'[^A-Za-z0-9_\-\.]', client_data_file):
+        #write back the file
+            with open(client_data_file, 'w') as ch:
+                ch.write(json.dumps(client_data))
+    except Exception as e:
+        app.logger.debug("failed to generate randomset " + str(e))
+        app.logger.debug(traceback.format_exc())
+        return jsonify({'result': 'nok'})
+    return jsonify({'result': 'ok'})
+
+def read_data(client_id, data='history'):
+    client_data = {}
+    client_data[data] = []
+    client_data_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.' + data +'.json')
+    app.logger.debug('client_data_file ' + client_data_file)
+    if client_id != '' and client_data_file.startswith(app.config['CLIENT_DB']) and re.search(r'[^A-Za-z0-9_\-\.]', client_data_file):
+        #read history
+        ch_raw = "{}"
+        try:
+            with open(client_data_file) as f:
+                ch_raw = ''.join(f.readlines())
+            client_data = json.loads(ch_raw)
+            # Do something with the file
+        except IOError:
+            app.logger.debug(data + " for " + client_id + "not readable")
+    return client_data
+
+@app.route('/history', methods=['GET', 'POST'])
+@app.route('/randomset', methods=['GET', 'POST'])
+def data():
+    client_data_tree = {
+        'tree': [],
+        'info': {}
+    }
+    data = request.path[1:];
+    try:
+        mpd_client = MPDClient()
+
+        mpd_client.timeout = 600
+        mpd_client.idletimeout = 600
+        mpd_client.connect(app.config['MPD_SOCKET'])
+        app.logger.debug('got ' + request.path)
+
+
+        client_data = read_data(request.args.get('client_id', ''), data)
+
+
+        #first try to find dir in client_history
+        for directory in client_data[data]:
+            count = {}
+            if directory != '/':
+                count = mpd_client.count('base', directory)
+                count['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(count['playtime']))))
+
+            client_data_tree['tree'].append({
+                'directory': directory,
+                'count': count
+
+                }
+            )
+        mpd_client.disconnect()
+        client_data_tree['tree'] = list(reversed(client_data_tree['tree']))
+    except Exception as e:
+        app.logger.debug('exception on data_read ' + str(e))
+        app.logger.debug(traceback.format_exc())
+    return jsonify(client_data_tree)
+
 
 
 
@@ -234,9 +328,6 @@ def mpd_proxy():
                     sub_dir_count = mpd_client.count('base', sub_dir)
                     sub_dir_count['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(sub_dir_count.get('playtime',0)))))
                     name['count'] = sub_dir_count
-
-
-
         elif(request.path == '/count'):
             content = mpd_client.count('base', request.args.get('directory', '.'))
             content['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(content['playtime']))))
@@ -244,8 +335,27 @@ def mpd_proxy():
         elif(request.path == '/addplay'):
             mpd_client.consume(1)
             mpd_client.add('signal.mp3')
-            content = mpd_client.add(request.args.get('directory', '.'))
+            directory = request.args.get('directory', '.')
+            content = mpd_client.add(directory)
             content = mpd_client.play()
+            #manage history
+            client_id = request.args.get('client_id', '')
+            client_history = read_history(client_id)
+
+            #first try to find dir in client_history
+            if directory in client_history['history']:
+                client_history['history'].remove(directory)
+            client_history['history'].append(directory)
+            client_history['history'] = client_history['history'][-10:]
+
+            client_history_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.history.json')
+
+            if client_id != '' and client_history_file.startswith(app.config['CLIENT_DB']) and re.search(r'[^A-Za-z0-9_\-\.]', client_history_file):
+                #write back the file
+                with open(client_history_file, 'w') as ch:
+                    ch.write(json.dumps(client_history))
+
+
         elif(request.path == '/play'):
             content = mpd_client.play()
         elif(request.path == '/pause'):

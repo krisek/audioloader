@@ -1,0 +1,12 @@
+<div class="outer_shadow">
+  <div class="album-cover-frame">
+    <img src="{{ servicesBasePath }}/cover?directory={{ album.encoded }}" height="92" title="{{ album.name }} ({{ album.playhours }})" class="album-cover-img" type="button"  data-toggle="modal" data-target="#exampleModal" (click)="processAction('coverPress')" />
+  </div>
+  <div class="album-title">
+    <span class="albumlink">
+    <a href="#" class="togglestar albumlink">☐</a>
+    <a href="#" class="play" (click)="processAction('openModal')" class="albumlink"><svg width="9px" height="9px" viewBox="0 0 31 31" xmlns="http://www.w3.org/2000/svg"><path d="M 1 1 L 1 30 L 30 15 z" fill="Black" stroke="Grey" stroke-width="2"/></svg></a>
+    <a href="#" (click)="processAction('showDir')" title="{{ album.name }} ({{ album.playhours }})" class="albumlink">{{ album.short }} ({{ album.playhours }})</a>
+    </span>
+  </div>
+</div>

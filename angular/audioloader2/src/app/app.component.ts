@@ -5,6 +5,8 @@ import { AppConfigService } from './app-config-service.service';
 import { SettingsComponent } from './settings/settings.component';
 import { PopupComponent } from './popup/popup.component';
 import { ToastComponent } from './toast/toast.component';
+import { AlbumcellComponent } from './albumcell/albumcell.component';
+
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
 import { trigger, state, style, animate, transition } from '@angular/animations';
@@ -68,6 +70,12 @@ export class AppComponent {
   showlist = false;
   dircount = 0;
   list_dir = [];
+  list_dir_dash = {
+    history: [],
+    randomset: []
+  }
+
+
   list_dir_alpha = {};
   list_alpha = [];
   lookfor = "";
@@ -78,6 +86,9 @@ export class AppComponent {
   settings = {}
 
   currentsong = {'title': 'not playing', 'active': false, 'title_short': 'not playing', 'album': '', 'track': '', 'artist': ''};
+
+  dash = false;
+  active_area = "browser";
 
   constructor(private environment: AppConfigService, private http: HttpClient, private modalService: NgbModal, private http2: HttpClient, public toastService: ToastService) {
     this.servicesBasePath = environment.config.servicesBasePath;
@@ -90,16 +101,19 @@ export class AppComponent {
       this.last_directory = localStorage.last_directory;
     }
 
-    this.settings['mpd_server'] = localStorage['mpd_server'];
-    this.settings['mpd_port'] = localStorage['mpd_port'];
+    this.settings['mpd_socket'] = localStorage['mpd_socket'];
     this.settings['stream'] = localStorage['stream'];
     this.settings['client_id'] = localStorage['client_id'];
     this.settings['target'] = localStorage['target'];
     this.settings['log'] = localStorage['log'];
 
+    if(typeof(this.settings['client_id']) == 'undefined' || this.settings['client_id'] == ""){
+      this.settings['client_id'] = 'guest';
+    }
 
-
-    this.showDir(this.last_directory);
+    this.dir = this.last_directory;
+    //this.showDir(this.last_directory);
+    this.showDash();
 
     this.pollCurrentsong();
 
@@ -218,11 +232,63 @@ export class AppComponent {
 
   };
 
+  updateSpec(spec){
 
+    this.http.get<any>(this.servicesBasePath + '/'+ spec +'?client_id=' + this.settings['client_id']).subscribe(data => {
+        console.log('got ' + spec);
+        console.log(data);
+        this.list_dir_dash[spec] = [];
+        for(var i in data.tree){
+          if('directory' in data.tree[i]){
+
+            var album = data.tree[i].directory;
+            var album_title = this.baseName(album);
+            this.list_dir_dash[spec].push({
+                    'name': album,
+                    'encoded': encodeURIComponent(album),
+                    'title': album_title,
+                    'short': this.truncate(album_title),
+                    'playhours': data.tree[i].count.playhours,
+                    'playtime': data.tree[i].count.playtime
+                    }
+            );
+          }
+        }
+      })
+
+
+  }
+
+  newSet(){
+
+    this.http.get<any>(this.servicesBasePath + '/generate_randomset?client_id=' + this.settings['client_id']).subscribe(data => {
+      this.updateSpec('randomset');
+      this.showSuccess('new set generated');
+    });
+
+  }
+
+
+
+  showDash(){
+    this.dash = true;
+    console.log('show Dash called');
+
+
+    var specs = ['history', 'randomset'];
+    for(var i = 0; i < specs.length; i++){
+      console.log(specs[i]);
+      var spec = specs[i];
+      this.updateSpec(spec);
+    }
+
+
+
+  };
 
   showDir(dir){
     console.log("showDir: " + dir);
-
+    this.dash = false;
     this.http.get<any>(this.servicesBasePath + '/ls?directory=' + encodeURIComponent(dir)).subscribe(data => {
       //console.log(data);
       this.displayTree(data);
@@ -235,7 +301,8 @@ export class AppComponent {
   searchItem(lookfor){
     if(lookfor.length < 4) return;
     console.log("searchItem " + lookfor);
-
+    this.dash = false;
+    this.active_area = "browser";
     this.http.get<any>(this.servicesBasePath + '/search?pattern=' + encodeURIComponent(lookfor)).subscribe(data => {
       console.log(data);
       this.displayTree(data);
@@ -253,10 +320,9 @@ export class AppComponent {
     console.log("addDir: " + addObject['dir']);
 
 
-    this.http.get<any>(this.servicesBasePath + '/addplay?directory=' + encodeURIComponent(addObject['dir'])).subscribe(data => {
+    this.http.get<any>(this.servicesBasePath + '/addplay?directory=' + encodeURIComponent(addObject['dir']) + '&client_id=' + this.settings['client_id']  ).subscribe(data => {
       console.log("enqueued dir ");
       this.showSuccess('loaded ' + this.truncate(this.baseName(addObject['dir']), 10))
-      this.sendCommand('play');
       this.updateCurrentSong();
       if(addObject['load']){
         this.openStream();
@@ -303,8 +369,25 @@ export class AppComponent {
 
     };
 
+  processAlbumCellAction(event){
+    switch(event['action']){
+      case 'showDir':
+        this.dash = false;
+        this.active_area = "browser";
+        this.showDir(event['dir']);
+        break;
+      case  'openModal':
+        this.openModal(event['dir']);
+        break;
+      case 'coverPress':
+        this.coverPressArea(event['dir'], event['playtime']);
+        break;
+      }
 
- openModal(dir) {
+
+  }
+
+  openModal(dir) {
     const modalRef = this.modalService.open(PopupComponent);
     modalRef.componentInstance.name = dir;
     modalRef.componentInstance.encoded = encodeURIComponent(dir);
@@ -356,6 +439,19 @@ export class AppComponent {
 
   }
 
+
+
+  coverPressArea(dir, playtime){
+    if(playtime<7200){
+      this.openModal(dir);
+    }
+    else{
+      this.showDir(dir);
+    }
+  }
+
+
+
   coverPress(dir){
     if(this.tree_dir[dir]['playtime']<7200){
       this.openModal(dir);
@@ -363,7 +459,6 @@ export class AppComponent {
     else{
       this.showDir(dir);
     }
-
   }
 
  dirName(path) {
