@@ -29,9 +29,8 @@ from random import choices
 
 import traceback
 
-log_level = getattr(logging, app.config['LOG_LEVEL'].upper(), None)
-if not isinstance(numeric_level, int):
-    log_level = getattr(logging, "INFO", None)
+log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO').upper(), None)
+
 logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
 
 CORS(app)
