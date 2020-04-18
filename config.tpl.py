@@ -9,3 +9,4 @@ class Config(object):
   MPD_SOCKET = '/tmp/mpd-6600-socket'
   SEND_FILE_MAX_AGE_DEFAULT = 0
   CLIENT_DB = '/var/lib/audioloader'
+  LOG_LEVEL = 'info'

@@ -29,7 +29,10 @@ from random import choices
 
 import traceback
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
+log_level = getattr(logging, app.config['LOG_LEVEL'].upper(), None)
+if not isinstance(numeric_level, int):
+    log_level = getattr(logging, "INFO", None)
+logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
 
 CORS(app)
 
@@ -159,7 +162,7 @@ def kodi():
 @app.route('/generate_randomset', methods=['GET', 'POST'])
 def generate_randomset():
     client_id = request.args.get('client_id', '')
-    
+
     client_data = {
         'randomset': []
     }
