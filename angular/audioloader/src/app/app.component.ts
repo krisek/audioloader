@@ -107,9 +107,18 @@ export class AppComponent {
     this.settings['target'] = localStorage['target'];
     this.settings['log'] = localStorage['log'];
 
+
+
+
     if(typeof(this.settings['client_id']) == 'undefined' || this.settings['client_id'] == ""){
       this.settings['client_id'] = 'guest';
     }
+
+    if(typeof(this.settings['mpd_socket']) == 'undefined' || this.settings['mpd_socket'] == ""){
+      this.settings['mpd_socket'] = '/run/mpd/socket';
+    }
+
+
 
     this.dir = this.last_directory;
     //this.showDir(this.last_directory);

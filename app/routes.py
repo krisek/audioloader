@@ -90,14 +90,14 @@ def cover():
         return redirect(request_d['fullpath'])
     else:
         if(cover == ''):
-            cover_path = app.config['MY_DIR'] + '/static/assets/vinyl.png'
+            cover_path = './static/assets/vinyl.png'
         else:
             cover_path = app.config['MUSIC_DIR'] + '/' + request.args.get('directory', '') + '/' + cover
         try:
             return send_file(cover_path)
         except Exception as e:
             app.logger.debug(traceback.format_exc())
-            return send_file('./app/static/assets/vinyl.png')
+            return send_file('./static/assets/vinyl.png')
 
 
 
