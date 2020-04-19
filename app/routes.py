@@ -31,6 +31,8 @@ import traceback
 
 from flask import send_file
 
+import redis
+
 log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO').upper(), None)
 
 logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
@@ -43,53 +45,85 @@ def mpd_connect():
 
 @app.route('/cover', methods=['GET', 'POST'])
 def cover():
-    mpd_client = MPDClient()
-    mpd_client.timeout = 600
-    mpd_client.idletimeout = 600
-    mpd_client.connect(app.config['MPD_SOCKET'])
 
-    dir_content = mpd_client.listfiles( request.args.get('directory', ''))
+    directory = request.args.get('directory', '')
+    app.logger.debug('getting cover for: ' + directory)
 
     response_type = request.args.get('response_type', 'direct')
 
-    app.logger.debug('got dir_content ' + json.dumps(dir_content))
-    request_d = request.args.__dict__
+    cover = 'vinyl.png'
 
-    image_pattern = re.compile("\.(jpg|jpeg|png|gif)$", re.IGNORECASE)
-    cover_pattern = re.compile("front|folder|cover", re.IGNORECASE)
+    #here we go for redis data
+    try:
+        r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+        cover = r.get('audioloader:cover:' + directory)
+        if cover:
+            app.logger.debug('got cover from redis: ' + cover)
+        else:
+            cover = 'vinyl.png'
+    except Exception as e:
+        app.logger.debug('getting cover from redis nok' + str(e))
+        app.logger.debug(traceback.format_exc())
+    finally:
+        del(r)
 
-    cover = ''
+    #here we crawl from directories
+    if cover == 'vinyl.png' or cover == None or cover == '':
+        mpd_client = MPDClient()
+        mpd_client.timeout = 600
+        mpd_client.idletimeout = 600
+        mpd_client.connect(app.config['MPD_SOCKET'])
 
-    images = []
-    for file_data in dir_content:
-        if(image_pattern.search(file_data.get('file',''))):
-            images.append(file_data.get('file',''))
-    #check the images which were found
-    for image in images:
-        #app.logger.debug('image ' + image)
-        if(cover_pattern.search(image)):
-            app.logger.debug('got cover ' + image)
-            cover = image
-            break
-        if(cover != ''):
-            break
+        dir_content = mpd_client.listfiles( directory )
 
-    if(cover == '' and images):
-        cover = images[0]
+        app.logger.debug('got dir_content ' + json.dumps(dir_content))
 
-    mpd_client.disconnect()
+        image_pattern = re.compile("\.(jpg|jpeg|png|gif)$", re.IGNORECASE)
+        cover_pattern = re.compile("front|folder|cover", re.IGNORECASE)
+
+
+
+        images = []
+        for file_data in dir_content:
+            if(image_pattern.search(file_data.get('file',''))):
+                images.append(file_data.get('file',''))
+        app.logger.debug('found images ' + ', '.join(images))
+        #check the images which were found
+        for image in images:
+            app.logger.debug('image ' + image)
+            if(cover_pattern.search(image)):
+                app.logger.debug('got cover ' + image)
+                cover = image
+                break
+            if(cover != 'vinyl.png'):
+                break
+
+        if(cover == 'vinyl.png' and len(images) > 0):
+            app.logger.debug('no pattern match; setting the first image as cover')
+            cover = images[0]
+
+        mpd_client.disconnect()
+        app.logger.debug('got cover from mpd: ' + cover)
+        #set key in redis
+        try:
+            r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+            r.set('audioloader:cover:' + directory, cover)
+        except Exception as e:
+            app.logger.debug('setting cover in redis nok ' + str(e))
+        finally:
+            del r
+
+    app.logger.debug('got cover: ' + cover)
 
     if response_type == 'redirect':
-        if(cover == ''):
-            request_d['fullpath'] = '/static/assets/vinyl.png'
-            request_d['cover'] = 'vinyl.png'
+        if(cover == 'vinyl.png'):
+            fullpath = '/static/assets/vinyl.png'
         else:
-            request_d['fullpath'] = app.config['MUSIC_WWW']  + request.args.get('directory', '') + '/' + cover
+            fullpath = app.config['MUSIC_WWW']  + request.args.get('directory', '') + '/' + cover
             #request_d['fullpath'] = request_d['fullpath'].replace('//','/')
-            request_d['cover'] = cover
-        return redirect(request_d['fullpath'])
+        return redirect(fullpath)
     else:
-        if(cover == ''):
+        if(cover == 'vinyl.png'):
             cover_path = './static/assets/vinyl.png'
         else:
             cover_path = app.config['MUSIC_DIR'] + '/' + request.args.get('directory', '') + '/' + cover
