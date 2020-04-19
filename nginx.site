@@ -1,0 +1,74 @@
+server {
+        listen 443 ssl http2;
+        listen [::]:443 ssl http2;
+
+
+        ssl_certificate /etc/letsencrypt/live/{{ audioloader_hostname }}/cert.pem; # managed by Certbot
+        ssl_certificate_key /etc/letsencrypt/live/{{ audioloader_hostname }}/privkey.pem; # managed by Certbot
+        include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+        ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+
+        ssl_trusted_certificate /etc/letsencrypt/live/{{ audioloader_hostname }}/chain.pem; # managed by Certbot
+        ssl_stapling on; # managed by Certbot
+        ssl_stapling_verify on; # managed by Certbot
+
+        root /var/www/audioloader/html;
+
+        # Add index.php to the list if you are using PHP
+        index index.php index.html index.htm index.nginx-debian.html;
+
+        server_name {{ audioloader_hostname }};
+
+        location /music/ {
+            alias /media/music/;
+            autoindex on;
+            allow all;
+        }
+
+
+
+
+        location / {
+                # First attempt to serve request as file, then
+                # as directory, then fall back to displaying a 404.
+                ##try_files $uri $uri/ =404;
+                include uwsgi_params;
+                uwsgi_pass unix:/var/www/audioloader/audioloader.sock;
+        }
+
+
+        }
+
+
+        # deny access to .htaccess files, if Apache's document root
+        # concurs with nginx's one
+        #
+        location ~ /data/ {
+                deny all;
+        }
+
+        client_max_body_size 500m;
+
+}
+
+
+# Virtual Host configuration for example.com
+#
+# You can move that to a different file under sites-available/ and symlink that
+# to sites-enabled/ to enable it.
+#
+server {
+        listen 80;
+        listen [::]:80;
+
+        server_name {{ audioloader_hostname }};
+
+        root /var/www/audioloader/html;
+        index index.html;
+
+        location / {
+            #    try_files $uri $uri/ =404;
+            rewrite ^/(.*)$ https://{{ audioloader_hostname }}/$1 permanent;
+        }
+}
