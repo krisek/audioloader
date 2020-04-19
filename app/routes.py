@@ -29,6 +29,8 @@ from random import choices
 
 import traceback
 
+from flask import send_file
+
 log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO').upper(), None)
 
 logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
@@ -47,6 +49,8 @@ def cover():
     mpd_client.connect(app.config['MPD_SOCKET'])
 
     dir_content = mpd_client.listfiles( request.args.get('directory', ''))
+
+    response_type = request.args.get('response_type', 'direct')
 
     app.logger.debug('got dir_content ' + json.dumps(dir_content))
     request_d = request.args.__dict__
@@ -72,16 +76,28 @@ def cover():
 
     if(cover == '' and images):
         cover = images[0]
-    if(cover == ''):
-        request_d['fullpath'] = '/static/assets/vinyl.png'
-        request_d['cover'] = 'vinyl.png'
-    else:
-        request_d['fullpath'] = app.config['MUSIC_WWW']  + request.args.get('directory', '') + '/' + cover
-        #request_d['fullpath'] = request_d['fullpath'].replace('//','/')
-        request_d['cover'] = cover
+
     mpd_client.disconnect()
 
-    return redirect(request_d['fullpath'])
+    if response_type == 'redirect':
+        if(cover == ''):
+            request_d['fullpath'] = '/static/assets/vinyl.png'
+            request_d['cover'] = 'vinyl.png'
+        else:
+            request_d['fullpath'] = app.config['MUSIC_WWW']  + request.args.get('directory', '') + '/' + cover
+            #request_d['fullpath'] = request_d['fullpath'].replace('//','/')
+            request_d['cover'] = cover
+        return redirect(request_d['fullpath'])
+    else:
+        if(cover == ''):
+            cover_path = app.config['MY_DIR'] + '/static/assets/vinyl.png'
+        else:
+            cover_path = app.config['MUSIC_DIR'] + '/' + request.args.get('directory', '') + '/' + cover
+        try:
+            return send_file(cover_path)
+        except Exception as e:
+            app.logger.debug(traceback.format_exc())
+            return send_file(app.config['MY_DIR'] + '/static/assets/vinyl.png')
 
 
 
