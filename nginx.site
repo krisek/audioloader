@@ -20,22 +20,20 @@ server {
 
         server_name {{ audioloader_hostname }};
 
-        location /music/ {
-            alias /media/music/;
-            autoindex on;
-            allow all;
-        }
-
+        #
+        #location /music/ {
+        #    alias /media/music/;
+        #    autoindex on;
+        #    allow all;
+        #}
+        #
 
 
 
         location / {
-                # First attempt to serve request as file, then
-                # as directory, then fall back to displaying a 404.
-                ##try_files $uri $uri/ =404;
                 include uwsgi_params;
                 uwsgi_pass unix:/var/www/audioloader/audioloader.sock;
-        }
+                }
 
 
         }
@@ -68,7 +66,6 @@ server {
         index index.html;
 
         location / {
-            #    try_files $uri $uri/ =404;
             rewrite ^/(.*)$ https://{{ audioloader_hostname }}/$1 permanent;
         }
 }

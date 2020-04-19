@@ -97,7 +97,7 @@ def cover():
             return send_file(cover_path)
         except Exception as e:
             app.logger.debug(traceback.format_exc())
-            return send_file(app.config['MY_DIR'] + '/static/assets/vinyl.png')
+            return send_file('./app/static/assets/vinyl.png')
 
 
 
