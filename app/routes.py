@@ -49,9 +49,9 @@ def cover():
     directory = request.args.get('directory', '')
     app.logger.debug('getting cover for: ' + directory)
 
-    response_type = request.args.get('response_type', 'direct')
+    response_type = request.args.get('response_type', 'redirect')
 
-    cover = 'vinyl.png'
+    cover = 'vinyl.webp'
 
     #here we go for redis data
     try:
@@ -60,7 +60,7 @@ def cover():
         if cover:
             app.logger.debug('got cover from redis: ' + cover)
         else:
-            cover = 'vinyl.png'
+            cover = 'vinyl.webp'
     except Exception as e:
         app.logger.debug('getting cover from redis nok' + str(e))
         app.logger.debug(traceback.format_exc())
@@ -68,7 +68,7 @@ def cover():
         del(r)
 
     #here we crawl from directories
-    if cover == 'vinyl.png' or cover == None or cover == '':
+    if cover == 'vinyl.webp' or cover == None or cover == '':
         mpd_client = MPDClient()
         mpd_client.timeout = 600
         mpd_client.idletimeout = 600
@@ -95,10 +95,10 @@ def cover():
                 app.logger.debug('got cover ' + image)
                 cover = image
                 break
-            if(cover != 'vinyl.png'):
+            if(cover != 'vinyl.webp'):
                 break
 
-        if(cover == 'vinyl.png' and len(images) > 0):
+        if(cover == 'vinyl.webp' and len(images) > 0):
             app.logger.debug('no pattern match; setting the first image as cover')
             cover = images[0]
 
@@ -116,22 +116,22 @@ def cover():
     app.logger.debug('got cover: ' + cover)
 
     if response_type == 'redirect':
-        if(cover == 'vinyl.png'):
-            fullpath = '/static/assets/vinyl.png'
+        if(cover == 'vinyl.webp'):
+            fullpath = '/static/assets/vinyl.webp'
         else:
-            fullpath = app.config['MUSIC_WWW']  + request.args.get('directory', '') + '/' + cover
+            fullpath = app.config['MUSIC_WWW']  + '/' + request.args.get('directory', '') + '/' + cover
             #request_d['fullpath'] = request_d['fullpath'].replace('//','/')
         return redirect(fullpath)
     else:
-        if(cover == 'vinyl.png'):
-            cover_path = './static/assets/vinyl.png'
+        if(cover == 'vinyl.webp'):
+            cover_path = './static/assets/vinyl.webp'
         else:
             cover_path = app.config['MUSIC_DIR'] + '/' + request.args.get('directory', '') + '/' + cover
         try:
             return send_file(cover_path)
         except Exception as e:
             app.logger.debug(traceback.format_exc())
-            return send_file('./static/assets/vinyl.png')
+            return send_file('./static/assets/vinyl.webp')
 
 
 
