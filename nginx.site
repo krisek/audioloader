@@ -20,13 +20,13 @@ server {
 
         server_name {{ audioloader_hostname }};
 
-        #
-        #location /music/ {
-        #    alias /media/music/;
-        #    autoindex on;
-        #    allow all;
-        #}
-        #
+
+        location /music/ {
+            alias /media/music/;
+            autoindex on;
+            allow all;
+        }
+
 
 
 
