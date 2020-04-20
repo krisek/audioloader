@@ -40,8 +40,10 @@ logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s %(name)s 
 CORS(app)
 
 def mpd_connect():
-    mpd_client.connect(app.config['MPD_SOCKET'])
+    mpd_client.connect('localhost', 6600)
     return True
+
+
 
 @app.route('/cover', methods=['GET', 'POST'])
 def cover():
@@ -72,7 +74,7 @@ def cover():
         mpd_client = MPDClient()
         mpd_client.timeout = 600
         mpd_client.idletimeout = 600
-        mpd_client.connect(app.config['MPD_SOCKET'])
+        mpd_client.connect('localhost', 6600)
 
         dir_content = mpd_client.listfiles( directory )
 
@@ -165,7 +167,7 @@ def poll_currentsong():
 
     mpd_client.timeout = 20000
     mpd_client.idletimeout = 20000
-    mpd_client.connect(app.config['MPD_SOCKET'])
+    mpd_client.connect('localhost', 6600)
     mpd_client.send_idle()
     app.logger.debug("waiting for mpd_client")
     select([mpd_client], [], [], 5)[0]
@@ -220,7 +222,7 @@ def generate_randomset():
 
         mpd_client.timeout = 600
         mpd_client.idletimeout = 600
-        mpd_client.connect(app.config['MPD_SOCKET'])
+        mpd_client.connect('localhost', 6600)
         albums = mpd_client.list('album')
         randomset = choices(albums, k=12)
         for album in randomset:
@@ -272,7 +274,7 @@ def data():
 
         mpd_client.timeout = 600
         mpd_client.idletimeout = 600
-        mpd_client.connect(app.config['MPD_SOCKET'])
+        mpd_client.connect('localhost', 6600)
         app.logger.debug('got ' + request.path)
 
 
@@ -324,7 +326,7 @@ def mpd_proxy():
 
         mpd_client.timeout = 600
         mpd_client.idletimeout = 600
-        mpd_client.connect(app.config['MPD_SOCKET'])
+        mpd_client.connect('localhost', 6600)
         app.logger.debug('got ' + request.path)
         if(request.path == '/listfiles'):
             content['tree'] = mpd_client.listfiles( request.args.get('directory', '.'))

@@ -50,3 +50,14 @@
   padding-left: 5px !important;
 
 }
+
+
+.mediabutton {
+  width: 20px;
+
+}
+
+.invert_colors {
+  filter: invert(90%) sepia(40%) brightness(118%) contrast(119%);
+
+}
