@@ -1,6 +1,6 @@
 <div class="outer_shadow">
   <div class="album-cover-frame">
-    <img src="{{ servicesBasePath }}/cover?directory={{ album.encoded }}" height="92" title="{{ album.name }} ({{ album.playhours }})" class="album-cover-img" type="button"  data-toggle="modal" data-target="#exampleModal" (click)="processAction('coverPress')" />
+    <img src="{{ servicesBasePath }}/cover?mpd_port={{ mpd_port }}&directory={{ album.encoded }}" height="92" title="{{ album.name }} ({{ album.playhours }})" class="album-cover-img" type="button"  data-toggle="modal" data-target="#exampleModal" (click)="processAction('coverPress')" />
   </div>
   <div class="album-title">
     <span class="albumlink">

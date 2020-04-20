@@ -83,7 +83,10 @@ export class AppComponent {
 
   isMenuCollapsed = true;
 
-  settings = {}
+  settings = {
+    'mpd_port': '6600',
+    'client_id': 'guest'
+  }
 
   currentsong = {'title': 'not playing', 'active': false, 'title_short': 'not playing', 'album': '', 'track': '', 'artist': ''};
 
@@ -101,9 +104,16 @@ export class AppComponent {
       this.last_directory = localStorage.last_directory;
     }
 
-    this.settings['mpd_socket'] = localStorage['mpd_socket'];
+    if(typeof(localStorage.mpd_port) != "undefined" && localStorage.mpd_port != "" ){
+      this.settings['mpd_port'] = localStorage['mpd_port'];
+    }
+
+    if(typeof(localStorage.client_id) != "undefined" && localStorage.client_id != "" ){
+      this.settings['client_id'] = localStorage['client_id'];
+    }
+
+
     this.settings['stream'] = localStorage['stream'];
-    this.settings['client_id'] = localStorage['client_id'];
     this.settings['target'] = localStorage['target'];
     this.settings['log'] = localStorage['log'];
 
@@ -114,9 +124,6 @@ export class AppComponent {
       this.settings['client_id'] = 'guest';
     }
 
-    if(typeof(this.settings['mpd_socket']) == 'undefined' || this.settings['mpd_socket'] == ""){
-      this.settings['mpd_socket'] = '/run/mpd/socket';
-    }
 
 
 
@@ -133,7 +140,7 @@ export class AppComponent {
   };
 
   pollCurrentsong(){
-    this.http2.get<any>(this.servicesBasePath + '/poll_currentsong').subscribe(data => {
+    this.http2.get<any>(this.servicesBasePath + '/poll_currentsong?mpd_port=' + this.settings['mpd_port']).subscribe(data => {
       //console.log(data);
       this.currentsong = data;
       this.currentsong['title_short'] = this.truncate(this.currentsong['title'], 28);
@@ -154,7 +161,7 @@ export class AppComponent {
   updateCurrentSong(){
     this.loading['currentsong'] = true;
 
-    this.http.get<any>(this.servicesBasePath + '/currentsong').subscribe(data => {
+    this.http.get<any>(this.servicesBasePath + '/currentsong?mpd_port=' + this.settings['mpd_port']).subscribe(data => {
       //console.log(data);
 
       this.currentsong = data;
@@ -243,7 +250,7 @@ export class AppComponent {
 
   updateSpec(spec){
 
-    this.http.get<any>(this.servicesBasePath + '/'+ spec +'?client_id=' + this.settings['client_id']).subscribe(data => {
+    this.http.get<any>(this.servicesBasePath + '/'+ spec +'?mpd_port=' + this.settings['mpd_port'] + '&client_id=' + this.settings['client_id']).subscribe(data => {
         console.log('got ' + spec);
         console.log(data);
         this.list_dir_dash[spec] = [];
@@ -270,7 +277,7 @@ export class AppComponent {
 
   newSet(){
 
-    this.http.get<any>(this.servicesBasePath + '/generate_randomset?client_id=' + this.settings['client_id']).subscribe(data => {
+    this.http.get<any>(this.servicesBasePath + '/generate_randomset?mpd_port=' + this.settings['mpd_port'] + '&client_id=' + this.settings['client_id']).subscribe(data => {
       this.updateSpec('randomset');
       this.showSuccess('new set generated');
     });
@@ -298,7 +305,12 @@ export class AppComponent {
   showDir(dir){
     console.log("showDir: " + dir);
     this.dash = false;
-    this.http.get<any>(this.servicesBasePath + '/ls?directory=' + encodeURIComponent(dir)).subscribe(data => {
+    this.tree_dir = {};
+    this.tree_file = {};
+    this.list_dir = new Array();
+    this.list_dir_alpha = {};
+    this.list_alpha = [];
+    this.http.get<any>(this.servicesBasePath + '/ls?mpd_port=' + this.settings['mpd_port'] + '&directory=' + encodeURIComponent(dir)).subscribe(data => {
       //console.log(data);
       this.displayTree(data);
     })
@@ -312,7 +324,7 @@ export class AppComponent {
     console.log("searchItem " + lookfor);
     this.dash = false;
     this.active_area = "browser";
-    this.http.get<any>(this.servicesBasePath + '/search?pattern=' + encodeURIComponent(lookfor)).subscribe(data => {
+    this.http.get<any>(this.servicesBasePath + '/search?mpd_port=' + this.settings['mpd_port'] + '&pattern=' + encodeURIComponent(lookfor)).subscribe(data => {
       console.log(data);
       this.displayTree(data);
     })
@@ -329,7 +341,7 @@ export class AppComponent {
     console.log("addDir: " + addObject['dir']);
 
 
-    this.http.get<any>(this.servicesBasePath + '/addplay?directory=' + encodeURIComponent(addObject['dir']) + '&client_id=' + this.settings['client_id']  ).subscribe(data => {
+    this.http.get<any>(this.servicesBasePath + '/addplay?mpd_port=' + this.settings['mpd_port'] + '&directory=' + encodeURIComponent(addObject['dir']) + '&client_id=' + this.settings['client_id']  ).subscribe(data => {
       console.log("enqueued dir ");
       this.showSuccess('loaded ' + this.truncate(this.baseName(addObject['dir']), 10))
       this.updateSpec('history');
@@ -346,7 +358,7 @@ export class AppComponent {
     console.log("sendCommand: " + command);
     this.loading[command] = true;
 
-    this.http.get<any>(this.servicesBasePath + '/' + command).subscribe(data => {
+    this.http.get<any>(this.servicesBasePath + '/' + command + '?mpd_port=' + this.settings['mpd_port']).subscribe(data => {
       console.log("returned " + command);
       this.loading[command] = false;
       })
@@ -426,7 +438,7 @@ export class AppComponent {
     console.log("openStream");
     this.loading['kodiload'] = true;
     //http://localhost:5000/kodi?server=192.168.1.51&action=Player.Open&stream=http://192.168.1.185:18080/audio.mp3"
-    this.http.get<any>(this.servicesBasePath + '/kodi?action=Player.Open&server=' + localStorage['target'] + "&stream=" + localStorage['stream']).subscribe(data => {
+    this.http.get<any>(this.servicesBasePath + '/kodi?mpd_port=' + this.settings['mpd_port'] + '&action=Player.Open&server=' + localStorage['target'] + "&stream=" + localStorage['stream']).subscribe(data => {
       this.loading['kodiload'] = false;
       console.log("stream opened ");
       this.showSuccess('loaded to kodi');
@@ -442,7 +454,7 @@ export class AppComponent {
     console.log("stopStream");
         this.loading['kodistop'] = true;
 
-    this.http.get<any>(this.servicesBasePath + '/kodi?action=Player.Stop&server=' + localStorage['target'] + "&stream=" + localStorage['stream']).subscribe(data => {
+    this.http.get<any>(this.servicesBasePath + '/kodi?mpd_port=' + this.settings['mpd_port'] + '&action=Player.Stop&server=' + localStorage['target'] + "&stream=" + localStorage['stream']).subscribe(data => {
       this.loading['kodistop'] = false;
       console.log("stream stopped");
       this.showSuccess('unloaded from kodi');

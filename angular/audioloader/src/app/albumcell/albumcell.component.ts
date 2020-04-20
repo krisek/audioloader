@@ -9,6 +9,7 @@ export class AlbumcellComponent implements OnInit {
   @Input() album;
   @Input() area;
   @Input() servicesBasePath;
+  @Input() mpd_port;
 
   @Output() messageEvent = new EventEmitter<object>();
   constructor() { }

@@ -60,7 +60,7 @@
         <br/>
         <ng-container *ngIf="!showlist">
         <div style="max-width: 100px;" class="album-cover inline-block" *ngFor="let elem of list_dir" >
-          <app-albumcell [album]="tree_dir[elem]" [servicesBasePath]="servicesBasePath" [area]="active_area" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
+          <app-albumcell [album]="tree_dir[elem]" [servicesBasePath]="servicesBasePath" [mpd_port]="settings.mpd_port" [area]="active_area" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
         </div>
         </ng-container>
         <ng-container *ngIf="showlist">
@@ -78,7 +78,7 @@
         <div id="files">
           <ng-container *ngIf="!dirs">
             <div class="album-cover-frame">
-              <img  src="{{ servicesBasePath }}/cover?directory={{ encoded }}" height="92" title="{{ title }}" class="album-cover-img" class="album-cover-img" type="button" class="btn" data-toggle="modal" data-target="#exampleModal" (click)="openModal(dir)"/>
+              <img  src="{{ servicesBasePath }}/cover?mpd_port={{ settings.mpd_port }}&directory={{ encoded }}" height="92" title="{{ title }}" class="album-cover-img" class="album-cover-img" type="button" class="btn" data-toggle="modal" data-target="#exampleModal" (click)="openModal(dir)"/>
             </div>
             <span class="" *ngFor="let file of tree_file | keyvalue">
                 <span *ngIf="file.value.track">{{file.value.track}}  -  {{file.value.title}} ({{file.value.duration}})</span>
@@ -93,7 +93,7 @@
           <div class="row">
            <div class="col-11 col-sm-10 col-md-9 col-lg-9 col-xl-9" id="div-randomset">
            <div style="max-width: 100px;" class="album-cover inline-block" *ngFor="let elem of list_dir_dash['randomset']" >
-            <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
+            <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port"  (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
           </div><br/>
           <span type="button" (click)="newSet()">new set</span><br/>
 
@@ -102,7 +102,7 @@
            <div class="col-1 col-sm-2 col-md-3 col-lg-3 col-xl-3" id="div-history2">
 
           <div style="max-width: 100px;" class="album-cover inline-block" *ngFor="let elem of list_dir_dash['history']" >
-            <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
+            <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
           </div>
           </div>
 
