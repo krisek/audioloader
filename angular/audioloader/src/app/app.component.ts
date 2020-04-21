@@ -566,6 +566,10 @@ export class AppComponent {
 
 
   truncate(str, length?, ending?) {
+    if(typeof(str) == "undefined" || str == null){
+      return "";
+    }
+
     if (length == null) {
       length = 30;
     }
