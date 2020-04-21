@@ -4,8 +4,8 @@
   </div>
   <div class="album-title">
     <span class="albumlink">
-    <a href="#" class="togglestar albumlink" (click)="processAction('toggleFavourite')"><mat-icon aria-hidden="false" aria-label="fav" *ngIf="album.favourite">favorite</mat-icon><mat-icon aria-hidden="false" aria-label="fav" *ngIf="!album.favourite">favorite_border</mat-icon></a>
-    <a href="#" class="play" (click)="processAction('openModal')" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav">play_arrow</mat-icon></a>
+    <a href="#" class="togglestar albumlink" (click)="processAction('toggleFavourite')"><mat-icon aria-hidden="false" aria-label="fav" *ngIf="album.favourite" class="dash-icon">favorite</mat-icon><mat-icon aria-hidden="false" aria-label="fav" *ngIf="!album.favourite" class="dash-icon">favorite_border</mat-icon></a>
+    <a href="#" class="play" (click)="processAction('openModal')" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon">play_arrow</mat-icon></a>
     <a href="#" (click)="processAction('showDir')" title="{{ album.name }} ({{ album.playhours }})" class="albumlink">{{ album.short }} ({{ album.playhours }})</a>
     </span>
   </div>

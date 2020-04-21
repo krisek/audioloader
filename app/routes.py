@@ -158,9 +158,11 @@ def process_currentsong(currentsong):
     if currentsong['state'] == 'play':
         currentsong['next_state'] = 'pause'
         currentsong['next_title'] = 'playing ➙ pause'
+        currentsong['next_icon'] = 'pause_circle_outline'
     if currentsong['state'] == 'pause':
         currentsong['next_state'] = 'play'
         currentsong['next_title'] = 'paused ➙ play'
+        currentsong['next_icon'] = 'play_circle_outline'
 
 
     return currentsong
