@@ -137,8 +137,8 @@ export class AppComponent {
     //this.showDir(this.last_directory);
     this.showDash();
 
+    this.updateCurrentSong();
     this.pollCurrentsong();
-
   };
 
   delay(ms: number) {
