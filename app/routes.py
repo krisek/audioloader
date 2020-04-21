@@ -148,13 +148,21 @@ def process_currentsong(currentsong):
         currentsong[state] = False
         if currentsong.get('state', 'stop') == state:
             currentsong[state] = True
+
     if 'title' not in currentsong and 'file' in currentsong:
         currentsong['title'] = currentsong['file']
+        currentsong['display_title'] = currentsong['file']
+    elif 'title' in currentsong and 'track' not in currentsong:
+        currentsong['display_title'] = currentsong['title']
+    elif 'title' in  currentsong and 'track' in currentsong:
+        currentsong['display_title'] = currentsong['track'] + ' - ' + currentsong['title']
+
     currentsong['active'] = False
     if currentsong.get('state','stop') in ['play', 'pause']:
         currentsong['active'] = True
     if not currentsong['active']:
-        currentsong['title'] = 'not playing'
+        currentsong['title'] = 'not playing' 
+        currentsong['display_title'] = 'not playing' 
     if currentsong['state'] == 'play':
         currentsong['next_state'] = 'pause'
         currentsong['next_title'] = 'playing ➙ pause'
@@ -234,7 +242,7 @@ def generate_randomset():
         mpd_client.idletimeout = 600
         mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
         albums = mpd_client.list('album')
-        randomset = choices(albums, k=12)
+        randomset = choices(albums, k=16)
         for album in randomset:
             try:
                 album_data = mpd_client.search('album', album['album'])

@@ -107,10 +107,15 @@ input.ng-valid {
   font-size: 1em;
   height: 1em !important;
 width: 1em !important;
-
+}
 .navbar-icon {
-  font-size: 2em;
-  height: 2em !important;
-width: 2em !important;
+
 
 }
+.new-set-icon {
+font-size: 6.5em;
+height: 6.5em !important;
+width: 6.5em !important;
+}
+
+

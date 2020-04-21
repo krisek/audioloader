@@ -2,33 +2,6 @@
   display: block;
 }
 
-.open-close-container {
-  border: 1px solid #dddddd;
-  margin-top: 1em;
-  padding: 20px 20px 0px 20px;
-  color: #000000;
-  font-weight: bold;
-  font-size: 20px;
-}
-
-
-@media (min-width:0px;) and (max-width: 767px) {
-   .navbar-collapse {
-        padding-left: 200px;
-   }
-}
-
-@media (min-width: 768px) {
- .navbar-collapse {
-        padding-left: 0;
-   }
-  .navbar {
-    padding-left: 4em;
-    padding-right: 4em;
-
-  }
-
-}
 
 .py-5 {
   padding-top: 0.5rem !important;
