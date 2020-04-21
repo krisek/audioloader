@@ -6,6 +6,8 @@ class Config(object):
   WTF_CSRF_METHODS = []
   MUSIC_DIR = '/media/music/mp3'
   MUSIC_WWW = '/music'
+  COVER_RESPONSE_TYPE = 'redirect'
   SEND_FILE_MAX_AGE_DEFAULT = 43200
   CLIENT_DB = '/var/lib/audioloader'
   LOG_LEVEL = 'info'
+  KODI = 'kodi.localdomain'

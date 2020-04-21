@@ -55,7 +55,7 @@ def cover():
     directory = request.args.get('directory', '')
     app.logger.debug('getting cover for: ' + directory)
 
-    response_type = request.args.get('response_type', 'redirect')
+    response_type = request.args.get('response_type', app.config.get('COVER_REDIRECT_METHOD', 'direct'))
 
     cover = 'vinyl.webp'
 
@@ -185,7 +185,9 @@ def poll_currentsong():
 
 @app.route('/kodi', methods=['GET', 'POST'])
 def kodi():
-    server = request.args.get('server', 'localhost')
+    server = request.args.get('server', app.config.get('KODI', 'localhost'))
+    if server == "" or server == "undefined":
+        server = app.config.get('KODI', 'localhost')
     url = 'http://{}:8080/jsonrpc'.format(server)
     app.logger.debug("kodi called {} {}".format(url, json.dumps(request.args)))
     proxies = {}

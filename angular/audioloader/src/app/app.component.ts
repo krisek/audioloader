@@ -112,9 +112,13 @@ export class AppComponent {
       this.settings['client_id'] = localStorage['client_id'];
     }
 
+    if(typeof(localStorage.target) != "undefined" && localStorage.target != "" ){
+      this.settings['target'] = localStorage['target'];
+    }
+
+
 
     this.settings['stream'] = localStorage['stream'];
-    this.settings['target'] = localStorage['target'];
     this.settings['log'] = localStorage['log'];
 
 
