@@ -5,17 +5,18 @@
 <main role="main">
 <ul ngbNav #nav="ngbNav" [activeId]="3" class="navbar navbar-light bg-light navbar-expand-lg mg-3 justify-content-between">
   <li [ngbNavItem]="1">
-    <span class="bg-light" style="font-size: 1.3em; vertical-align: text-bottom;" type="button" (click)="showDir(dir)">dir</span>&nbsp;&nbsp;
+    <a href="#" (click)="showDir(dir)"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="folders" >folder_open</mat-icon></a>&nbsp;
+    <a href="#" (click)="showDash()"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="dashboard" >dashboard</mat-icon></a>&nbsp;
   </li>
-  <li [ngbNavItem]="2">
-    <span class="bg-light" style="font-size: 1.3em; vertical-align: text-bottom;" type="button" (click)="showDash()">dash</span>&nbsp;&nbsp;
-  </li>
-  <li [ngbNavItem]="3">
-    <span *ngIf="currentsong['active']" >
-
+  <li [ngbNavItem]="2" *ngIf="currentsong['active']">
         <a href="#" (click)="openStream()"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream"  [@loadingTrigger]="loading['kodiload'] ? 'loading' : 'normal'">queue_music</mat-icon></a>&nbsp;
 
         <a href="#" (click)="stopStream()"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop stream"  [@loadingTrigger]="loading['kodistop'] ? 'loading' : 'normal'">remove_from_queue</mat-icon></a>&nbsp;
+  </li>
+
+  <li [ngbNavItem]="3" *ngIf="currentsong['active']">
+
+
 
         <a href="#" *ngIf="currentsong['next_state']" (click)="sendCommand(currentsong['next_state'])"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="{{ currentsong['next_title'] }}" >{{ currentsong['next_icon'] }}</mat-icon></a>&nbsp;
 
@@ -26,10 +27,11 @@
         <a href="#" (click)="sendCommand('next')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="next"  [@loadingTrigger]="loading['next'] ? 'loading' : 'normal'">fast_forward</mat-icon></a>&nbsp;
 
 
-        <span style="font-size: 1.3em; vertical-align: text-bottom;" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" *ngIf="currentsong['track']" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{currentsong['track']}} - </span>
-        <span style="font-size: 1.3em; vertical-align: text-bottom;" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{ currentsong['title_short'] }}</span>
-  </span>
-   <span style="font-size: 1.3em; vertical-align: text-bottom;" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" *ngIf="!currentsong['active']" (click)="updateCurrentSong()">not playing</span>&nbsp;&nbsp;
+        <span style="font-size: 1.1em; vertical-align: top;" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" *ngIf="currentsong['track']" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{currentsong['track']}} - </span>
+        <span style="font-size: 1.1em; vertical-align: top;" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{ currentsong['title_short'] }}</span>
+   </li>
+   <li [ngbNavItem]="3" *ngIf="!currentsong['active']">
+   <span style="font-size: 1.1em; vertical-align: top;" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" (click)="updateCurrentSong()">not playing</span>&nbsp;&nbsp;
   </li>
 
   <li ngbNavItem class="ml-auto">
