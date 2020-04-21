@@ -103,3 +103,9 @@ input.ng-valid {
 
 }
 
+.mat-icon {
+  font-size: 1em !important;
+  height: 1em !important;
+width: 1em !important;
+
+}

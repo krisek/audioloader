@@ -13,6 +13,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { SettingsComponent } from './settings/settings.component';
 import { PopupComponent } from './popup/popup.component';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatIconModule } from '@angular/material/icon';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -37,8 +38,9 @@ const appInitializerFn = (appConfig: AppConfigService) => {
     CommonModule,
     AppRoutingModule,
     NgbModule,
-    MatSlideToggleModule,
-    BrowserAnimationsModule
+    BrowserAnimationsModule,
+    MatIconModule,
+    MatSlideToggleModule
   ],
   providers: [
     AppConfigService,

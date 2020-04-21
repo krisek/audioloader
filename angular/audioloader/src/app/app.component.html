@@ -54,7 +54,8 @@
       <div class="col-sm-12" id="navarea">
         <ng-container *ngIf="!dash">
         <span *ngFor="let elem of path">/<a href="#" (click)="showDir(elem.dir)">{{ elem.name }}</a></span>&nbsp;&nbsp;
-        <a href="#" class="play" (click)="openModal(dir)" class="albumlink"><svg width="9px" height="9px" viewBox="0 0 31 31" xmlns="http://www.w3.org/2000/svg"><path d="M 1 1 L 1 30 L 30 15 z" fill="Black" stroke="Grey" stroke-width="2"/></svg></a>
+            <a href="#" class="togglestar albumlink" (click)="toggleFavourite(dir)"><mat-icon aria-hidden="false" aria-label="fav" *ngIf="favourite">favorite</mat-icon><mat-icon aria-hidden="false" aria-label="fav" *ngIf="!favourite">favorite_border</mat-icon></a>
+        <a href="#" class="play" (click)="openModal(dir)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav">play_arrow</mat-icon></a>
         <span *ngIf="lookfor">&nbsp;&nbsp;|&nbsp;<a href="#" (click)="searchItem(lookfor)">{{ lookfor }}</a></span>
 
         <br/>
@@ -68,7 +69,7 @@
           <b>{{ initial }}</b><br/>
         <span *ngFor="let elem of list_dir_alpha[initial]">
             <a href="#" id="togglestar" onclick="" title="mark" class="albumlink">☐</a>&nbsp;
-            <a href="#" class="play" (click)="openModal(tree_dir[elem].name)" class="albumlink"><svg width="9px" height="9px" viewBox="0 0 31 31" xmlns="http://www.w3.org/2000/svg"><path d="M 1 1 L 1 30 L 30 15 z" fill="Black" stroke="Grey" stroke-width="2"/></svg></a>
+            <a href="#" class="play" (click)="openModal(tree_dir[elem].name)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav">play_arrow</mat-icon></a>
               <a href="#" (click)="showDir(tree_dir[elem].name)" title="{{ tree_dir[elem].name }} ({{ tree_dir[elem].playhours }})" class="albumlink">{{ tree_dir[elem].title }} ({{ tree_dir[elem].playhours }})</a>
         </span>
         <br/>
@@ -98,6 +99,11 @@
           <span type="button" (click)="newSet()">new set</span><br/>
 
           <hr>
+          <div style="max-width: 100px;" class="album-cover inline-block" *ngFor="let elem of list_dir_dash['favourites']" >
+            <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port"  (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
+          </div>
+
+
           </div>
            <div class="col-1 col-sm-2 col-md-3 col-lg-3 col-xl-3" id="div-history2">
 

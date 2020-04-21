@@ -63,6 +63,7 @@ export class AppComponent {
   encoded = '';
   title = '';
   short = '';
+  favourite = false;
   path = [];
   tree_dir = {};
   tree_file = {};
@@ -72,7 +73,8 @@ export class AppComponent {
   list_dir = [];
   list_dir_dash = {
     history: [],
-    randomset: []
+    randomset: [],
+    favourites: []
   }
 
 
@@ -211,7 +213,10 @@ export class AppComponent {
         this.tree_dir[album]['encoded'] = encodeURIComponent(album);
         this.tree_dir[album]['title'] = this.baseName(album);
         this.tree_dir[album]['short'] = this.truncate(this.tree_dir[album]['title']);
+        var favourite = false;
+        if(this.list_dir_dash['favourites'].findIndex(obj => obj.name == album) !== -1) favourite = true;
 
+        this.tree_dir[album]['favourite'] = favourite
 
         this.list_dir.push(album);
         var alpha = this.tree_dir[album]['title'].substring(0, 1);
@@ -263,13 +268,16 @@ export class AppComponent {
 
             var album = data.tree[i].directory;
             var album_title = this.baseName(album);
+            var favourite = false;
+            if(this.list_dir_dash['favourites'].findIndex(obj => obj.name == album) !== -1 || spec == 'favourites') favourite = true;
             this.list_dir_dash[spec].push({
                     'name': album,
                     'encoded': encodeURIComponent(album),
                     'title': album_title,
                     'short': this.truncate(album_title),
                     'playhours': data.tree[i].count.playhours,
-                    'playtime': data.tree[i].count.playtime
+                    'playtime': data.tree[i].count.playtime,
+                    'favourite': favourite
                     }
             );
           }
@@ -295,7 +303,7 @@ export class AppComponent {
     console.log('show Dash called');
 
 
-    var specs = ['history', 'randomset'];
+    var specs = ['favourites', 'history', 'randomset'];
     for(var i = 0; i < specs.length; i++){
       console.log(specs[i]);
       var spec = specs[i];
@@ -370,6 +378,53 @@ export class AppComponent {
 
   };
 
+  toggleFavourite(album) {
+    console.log('toggleFavourite: ' + album);
+    var action = 'add_favourite';
+    if(this.list_dir_dash['favourites'].find(obj => obj.name == album)){
+      action = 'remove_favourite';
+    }
+    console.log('toggleFavourite: ' + action);
+    this.http.get<any>(this.servicesBasePath + '/' + action + '?mpd_port=' + this.settings['mpd_port'] + '&directory=' + encodeURIComponent(album) + '&client_id=' + this.settings['client_id']  ).subscribe(data => {
+      console.log("favourite toggle returned");
+
+
+
+      var index = this.list_dir_dash['favourites'].findIndex(obj => obj.name == album);
+      if (index !== -1){
+        this.list_dir_dash['favourites'].splice(index, 1);
+      }
+      else{
+        var album_title = this.baseName(album);
+        this.list_dir_dash['favourites'].push({
+                'name': album,
+                'encoded': encodeURIComponent(album),
+                'title': album_title,
+                'short': this.truncate(album_title),
+                //'playhours': data.tree[i].count.playhours,
+                //'playtime': data.tree[i].count.playtime,
+                'favourite': true
+                }
+        );
+      }
+
+
+
+      console.log('new favourites');
+      console.log(this.list_dir_dash['favourites']);
+
+      if(album in this.tree_dir) this.tree_dir[album]['favourite'] = ! this.tree_dir[album]['favourite'];
+
+
+      var specs = ['history', 'randomset'];
+      for(var i = 0; i < specs.length; i++){
+        var index = this.list_dir_dash[specs[i]].findIndex(obj => obj.name == album);
+        if (index !== -1) this.list_dir_dash[specs[i]][index]['favourite'] = ! this.list_dir_dash[specs[i]][index]['favourite'];
+      }
+    })
+
+  };
+
 
 
 
@@ -378,6 +433,9 @@ export class AppComponent {
     this.encoded = encodeURIComponent(dir);
     this.title = this.baseName(dir);
     this.short = this.truncate(dir);
+    this.favourite = false
+    if(this.list_dir_dash['favourites'].findIndex(obj => obj.name == this.dir) !== -1) this.favourite = true;
+
 
     this.path = [];
     var pathcrawl = dir;
@@ -405,6 +463,9 @@ export class AppComponent {
         break;
       case  'openModal':
         this.openModal(event['dir']);
+        break;
+      case  'toggleFavourite':
+        this.toggleFavourite(event['dir']);
         break;
       case 'coverPress':
         this.coverPressArea(event['dir'], event['playtime']);

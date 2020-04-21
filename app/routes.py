@@ -115,7 +115,8 @@ def cover():
             r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
             r.set('audioloader:cover:' + directory, cover)
         except Exception as e:
-            app.logger.debug('setting cover in redis nok ' + str(e))
+            app.logger.warn('setting cover in redis nok ' + str(e))
+            app.logger.debug(traceback.format_exc())
         finally:
             del r
 
@@ -136,6 +137,7 @@ def cover():
         try:
             return send_file(cover_path)
         except Exception as e:
+            app.logger.warn('coulnot send cover ' + str(e) + ' ' + cover_path)
             app.logger.debug(traceback.format_exc())
             return send_file('./static/assets/vinyl.webp')
 
@@ -264,11 +266,45 @@ def read_data(client_id, data='history'):
             client_data = json.loads(ch_raw)
             # Do something with the file
         except IOError:
-            app.logger.debug(data + " for " + client_id + "not readable")
+            app.logger.warn(data + " for " + client_id + "not readable")
+            app.logger.debug(traceback.format_exc())
     return client_data
+
+@app.route('/remove_favourite', methods=['GET', 'POST'])
+@app.route('/add_favourite', methods=['GET', 'POST'])
+def favourites():
+    try:
+        directory = request.args.get('directory', '.');
+        #manage history
+        client_id = request.args.get('client_id', 'guest')
+        client_favourites = read_data(client_id, 'favourites')
+
+        #first try to find dir in client_favourites
+        if directory in client_favourites['favourites']:
+            client_favourites['favourites'].remove(directory)
+
+        if request.path[1:] == 'add_favourite':
+            client_favourites['favourites'].append(directory)
+        #client_favourites['favourites'] = client_favourites['favourites'][-10:]
+
+        client_favourites_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.favourites.json')
+
+        if client_id != '' and client_favourites_file.startswith(app.config['CLIENT_DB']) and re.search(r'[^A-Za-z0-9_\-\.]', client_favourites_file):
+            #write back the file
+            with open(client_favourites_file, 'w') as ch:
+                ch.write(json.dumps(client_favourites))
+    except Exception as e:
+        app.logger.debug("failed to save favourite " + str(e))
+        app.logger.debug(traceback.format_exc())
+        return jsonify({'result': 'nok'})
+    return jsonify({'result': 'ok'})
+
+
+
 
 @app.route('/history', methods=['GET', 'POST'])
 @app.route('/randomset', methods=['GET', 'POST'])
+@app.route('/favourites', methods=['GET', 'POST'])
 def data():
     client_data_tree = {
         'tree': [],
@@ -291,8 +327,12 @@ def data():
         for directory in client_data[data]:
             count = {}
             if directory != '/':
-                count = mpd_client.count('base', directory)
-                count['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(count['playtime']))))
+                try:
+                    count = mpd_client.count('base', directory)
+                    count['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(count['playtime']))))
+                except Exception as e:
+                    app.logger.warn('couldnot get count for  '+ directory + "  " + str(e))
+                    app.logger.debug(traceback.format_exc())
 
             client_data_tree['tree'].append({
                 'directory': directory,
@@ -303,7 +343,7 @@ def data():
         mpd_client.disconnect()
         client_data_tree['tree'] = list(reversed(client_data_tree['tree']))
     except Exception as e:
-        app.logger.debug('exception on data_read ' + str(e))
+        app.logger.warn('exception on data_read ' + str(e))
         app.logger.debug(traceback.format_exc())
     return jsonify(client_data_tree)
 
@@ -437,7 +477,8 @@ def mpd_proxy():
         mpd_client.disconnect()
 
     except Exception as e:
-        app.logger.debug('exception on mod_proxy ' + str(e))
+        app.logger.warn('exception on mpd_proxy ' + str(e))
+        app.logger.debug(traceback.format_exc())
 
     return jsonify(content)
 
