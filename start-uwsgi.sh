@@ -4,4 +4,5 @@ cd "$(dirname "$0")"
 pwd
 . venv/bin/activate
 uwsgi --ini app.ini
-setfacl -m u:www-data:rw  audioloader.sock
+#since it seems to scale better with TCP on Raspberry this is not needed
+#setfacl -m u:www-data:rw  audioloader.sock
