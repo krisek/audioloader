@@ -85,7 +85,7 @@ def cover():
         app.logger.debug('got dir_content ' + json.dumps(dir_content))
 
         image_pattern = re.compile("\.(jpg|jpeg|png|gif)$", re.IGNORECASE)
-        cover_pattern = re.compile("front|folder|cover", re.IGNORECASE)
+        cover_pattern = re.compile("folder|cover|front", re.IGNORECASE)
 
 
 
@@ -161,8 +161,8 @@ def process_currentsong(currentsong):
     if currentsong.get('state','stop') in ['play', 'pause']:
         currentsong['active'] = True
     if not currentsong['active']:
-        currentsong['title'] = 'not playing' 
-        currentsong['display_title'] = 'not playing' 
+        currentsong['title'] = 'not playing'
+        currentsong['display_title'] = 'not playing'
     if currentsong['state'] == 'play':
         currentsong['next_state'] = 'pause'
         currentsong['next_title'] = 'playing ➙ pause'
