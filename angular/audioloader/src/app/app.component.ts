@@ -571,7 +571,7 @@ export class AppComponent {
     }
 
     if (length == null) {
-      length = 30;
+      length = 35;
     }
     if (ending == null) {
       ending = '…';

@@ -1,9 +1,6 @@
 <app-toast aria-live="polite" aria-atomic="true"></app-toast>
 
 
-<body>
-
-
 <style>
 
 .navbar-dark {
@@ -16,10 +13,10 @@
 }
 
 .long {
-    
+
 }
 .verylong {
-    
+
 }
 
 .truncate {
@@ -31,7 +28,7 @@
 
 .long-and-truncated {
   flex: 2;
-  
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -56,11 +53,11 @@
   <div class="collapse navbar-collapse"
        [ngClass]="{ 'show': isMenuOpen }">
     <form class="form-inline my-2 my-lg-0 ml-auto">
-    
+
     <a href="#" (click)="openStream()" class="nav-item nav-link" *ngIf="currentsong['active']"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream to kodi"  [@loadingTrigger]="loading['kodiload'] ? 'loading' : 'normal'">queue_music</mat-icon></a>
-    
+
     <a href="#" (click)="stopStream()" class="nav-item nav-link" *ngIf="currentsong['active']"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop stream on kodi"  [@loadingTrigger]="loading['kodistop'] ? 'loading' : 'normal'">remove_from_queue</mat-icon></a>
-    
+
     <a href="#" class="nav-item nav-link" *ngIf="currentsong['next_state']" (click)="sendCommand(currentsong['next_state'])"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="{{ currentsong['next_title'] }}" >{{ currentsong['next_icon'] }}</mat-icon></a>
 
     <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('stop')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop"  [@loadingTrigger]="loading['stop'] ? 'loading' : 'normal'">stop</mat-icon></a>
@@ -69,7 +66,7 @@
 
     <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('next')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="next"  [@loadingTrigger]="loading['next'] ? 'loading' : 'normal'">fast_forward</mat-icon></a>
 
-    
+
         <input class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="search..." name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target.value; searchItem($event.target.value)" onfocus="this.select();" onmouseup="return false;">
 
         <a href="#" class="nav-item nav-link"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="settings" (click)="openSettings()">settings</mat-icon></a>
@@ -85,14 +82,14 @@
     <div class="row">
       <div class="col-sm-12" >
         <ng-container *ngIf="!dash">
-        <span *ngFor="let elem of path">/<a href="#" (click)="showDir(elem.dir)">{{ elem.name }}</a></span>&nbsp;&nbsp;
-            <a href="#" class="togglestar albumlink" (click)="toggleFavourite(dir)"><mat-icon aria-hidden="false" aria-label="fav" *ngIf="favourite" class="dash-icon">favorite</mat-icon><mat-icon aria-hidden="false" aria-label="fav" *ngIf="!favourite" class="dash-icon">favorite_border</mat-icon></a>
-        <a href="#" class="play" (click)="openModal(dir)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon">play_arrow</mat-icon></a>
+        <span *ngFor="let elem of path">/<a href="#" class="albumlink" (click)="showDir(elem.dir)">{{ elem.name }}</a></span>&nbsp;&nbsp;
+            <a href="#" class="togglestar albumlink" (click)="toggleFavourite(dir)"><mat-icon aria-hidden="false" aria-label="fav" *ngIf="favourite" class="dash-icon togglestar-icon">favorite</mat-icon><mat-icon aria-hidden="false" aria-label="fav" *ngIf="!favourite" class="dash-icon togglestar-icon">favorite_border</mat-icon></a>
+        <a href="#" class="play" (click)="openModal(dir)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon></a>
         <span *ngIf="lookfor">&nbsp;&nbsp;|&nbsp;<a href="#" (click)="searchItem(lookfor)">{{ lookfor }}</a></span>
 
         <br/>
         <ng-container *ngIf="!showlist">
-        <div style="max-width: 100px;" class="album-cover inline-block" *ngFor="let elem of list_dir" >
+        <div class="album-cover inline-block" *ngFor="let elem of list_dir" >
           <app-albumcell [album]="tree_dir[elem]" [servicesBasePath]="servicesBasePath" [mpd_port]="settings.mpd_port" [area]="active_area" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
         </div>
         </ng-container>
@@ -100,8 +97,8 @@
         <span *ngFor="let initial of list_alpha">
           <b>{{ initial }}</b><br/>
         <span *ngFor="let elem of list_dir_alpha[initial]">
-            <a href="#" id="togglestar" onclick="" title="mark" class="albumlink">☐</a>&nbsp;
-            <a href="#" class="play" (click)="openModal(tree_dir[elem].name)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon">play_arrow</mat-icon></a>
+            <a href="#" class="togglestar albumlink" (click)="toggleFavourite(tree_dir[elem].name)"><mat-icon aria-hidden="false" aria-label="fav" *ngIf="tree_dir[elem].favourite" class="dash-icon togglestar-icon">favorite</mat-icon><mat-icon aria-hidden="false" aria-label="fav" *ngIf="!tree_dir[elem].favourite" class="dash-icon togglestar-icon">favorite_border</mat-icon></a>
+            <a href="#" class="play" (click)="openModal(tree_dir[elem].name)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon></a>
               <a href="#" (click)="showDir(tree_dir[elem].name)" title="{{ tree_dir[elem].name }} ({{ tree_dir[elem].playhours }})" class="albumlink">{{ tree_dir[elem].title }} ({{ tree_dir[elem].playhours }})</a>
         </span>
         <br/>
@@ -110,8 +107,10 @@
 
         <div id="files">
           <ng-container *ngIf="!dirs">
+            <div class="outer_shadow">
             <div class="album-cover-frame">
-              <img  src="{{ servicesBasePath }}/cover?mpd_port={{ settings.mpd_port }}&directory={{ encoded }}" height="92" title="{{ title }}" class="album-cover-img" class="album-cover-img" type="button" class="btn" data-toggle="modal" data-target="#exampleModal" (click)="openModal(dir)"/>
+              <img  src="{{ servicesBasePath }}/cover?mpd_port={{ settings.mpd_port }}&directory={{ encoded }}" height="125" title="{{ title }}" class="album-cover-img" class="album-cover-img" type="button"  data-toggle="modal" data-target="#exampleModal" (click)="openModal(dir)"/>
+            </div>
             </div>
             <span class="" *ngFor="let file of tree_file | keyvalue">
                 <span *ngIf="file.value.track">{{file.value.track}}  -  {{file.value.title}} ({{file.value.duration*1000 | date:'H:mm:ss':'UTC' | replace:'0:':''}})</span>
@@ -124,16 +123,16 @@
         </ng-container>
         <ng-container *ngIf="dash">
           <div class="row">
-           <div class="col-11 col-sm-10 col-md-9 col-lg-9 col-xl-9" id="div-randomset">
-           <div style="max-width: 100px;" class="album-cover inline-block" *ngFor="let elem of list_dir_dash['randomset']" >
+           <div class="col-10 col-sm-10 col-md-9 col-lg-9 col-xl-9" id="div-randomset">
+           <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['randomset']" >
             <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port"  (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
           </div>
           <br/>
           <a href="#" (click)="newSet()"><mat-icon aria-hidden="false" aria-label="fav" title="new set" class="large material-icons">sync</mat-icon></a>
-         
+
 
           <hr>
-          <div style="max-width: 100px;" class="album-cover inline-block" *ngFor="let elem of list_dir_dash['favourites']" >
+          <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['favourites']" >
             <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port"  (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
           </div>
 
@@ -141,7 +140,7 @@
           </div>
            <div class="col-1 col-sm-2 col-md-3 col-lg-3 col-xl-3" id="div-history2">
 
-          <div style="max-width: 100px;" class="album-cover inline-block" *ngFor="let elem of list_dir_dash['history']" >
+          <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['history']" >
             <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
           </div>
           </div>
@@ -163,7 +162,6 @@
     </p>
   </div>
 </footer>
-</body>
 
 
 

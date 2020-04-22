@@ -58,32 +58,7 @@ footer p {
     border-radius: 10%;
 }
 
-.albumlink {
-    font-size: 0.83em;
-    color: #1a1713 !important;
-}
 
-.albumlink a:link {
-    text-decoration: none !important;
-    color: #1a1713 !important;
-}
-
-.album-cover {
-    margin: 0.9em;
-    margin: 1px;
-    text-align: left;
-    vertical-align: top;
-    background-color: #FCFCFC;
-    color: #1a1713 !important;
-    border-radius: 5px;
-    height: 160px;
-    line-height: 1.1;
-    width: 100px;
-    overflow: hidden;
-    border-color: #F1F1F5;
-    border-width: 1.5px;
-    border-style: solid;
-}
 
 
 input.ng-invalid {
@@ -119,26 +94,44 @@ width: 6.5em !important;
 }
 
 .outer_shadow {
-    height: 95px;
-    width: 95px;
+    height: 135px;
+    width: 135px;
     margin: 2px 2px 2px 2px;
 }
 .album-cover-frame {
     /*background: url("vinyl.png") no-repeat scroll transparent;*/
-    height: 92px;
-    width: 92px;
+    height: 128px;
+    width: 128px;
     margin: 2px 0 6px 2px;
     overflow: hidden;
     position: relative;
-    background-size: 100%;
+    border-radius: 5px;
 }
 .album-cover-img {
-    border-radius: 10%;    
+    border-radius: 10%;
+    width: 122px;
 }
 
 .albumlink {
-    margin: 3px 2px 2px 2px;
+
+    /* color: #1a1713 !important; font-size: 0.83em; */
+    color: #454857f0 !important;
+    /*margin: 3px 2px 2px 2px;*/
+
 }
+
+
+
+a.albumlink {
+
+
+}
+
+.albumlink a:link {
+    text-decoration: none !important;
+    color: #454857f0  !important;
+}
+
 
 .inline-block {
     display: inline-block;
@@ -147,20 +140,27 @@ width: 6.5em !important;
 
 }
 .album-cover {
-    /*margin: 0.9em; */
     margin: 1px;
     text-align: left;
     vertical-align: top;
-/*    background-color: #FCFCFC; */
+    background-color: #FCFCFC;
     color:  #1a1713 !important;
     border-radius: 5px;
-    height: 154px;
-    width: 100px;
+    height: 200px;
+    width: 132px;
+    max-width: 132px;
     overflow:hidden;
     border-color: #F1F1F5;
     border-width: 1.5px;
     border-style: solid;
+    font-family: Roboto, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    line-height: 1.3rem;
+    font-size: 1rem;
+
+
 }
+
+
 
 .album-cover:hover{
     background-color: #F1F1F5;
@@ -168,5 +168,21 @@ width: 6.5em !important;
 
 .album-title {
     word-wrap: break-word;
+    width: 126px;
+
 }
 
+div.album {
+   font-family: Roboto, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-size: 1.25rem;
+
+}
+
+.togglestar .togglestar-icon {
+    color: #d87a7a5b;
+    margin-right: 0px;
+}
+
+.play-icon {
+    color: #5d7ab1;
+}
