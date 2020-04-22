@@ -21,6 +21,8 @@ import { ToastService } from './toast-service.service';
 import { ToastComponent } from './toast/toast.component';
 import { AlbumcellComponent } from './albumcell/albumcell.component';
 
+import { ReplacePipe } from './replace.pipe';
+
 
 const appInitializerFn = (appConfig: AppConfigService) => {
     return () => {
@@ -30,7 +32,7 @@ const appInitializerFn = (appConfig: AppConfigService) => {
 
 @NgModule({
   declarations: [
-    AppComponent, SettingsComponent, PopupComponent, ToastComponent, AlbumcellComponent
+    AppComponent, SettingsComponent, PopupComponent, ToastComponent, AlbumcellComponent, ReplacePipe
   ],
   imports: [
     BrowserModule,

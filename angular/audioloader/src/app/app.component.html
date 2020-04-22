@@ -114,7 +114,7 @@
               <img  src="{{ servicesBasePath }}/cover?mpd_port={{ settings.mpd_port }}&directory={{ encoded }}" height="92" title="{{ title }}" class="album-cover-img" class="album-cover-img" type="button" class="btn" data-toggle="modal" data-target="#exampleModal" (click)="openModal(dir)"/>
             </div>
             <span class="" *ngFor="let file of tree_file | keyvalue">
-                <span *ngIf="file.value.track">{{file.value.track}}  -  {{file.value.title}} ({{file.value.duration}})</span>
+                <span *ngIf="file.value.track">{{file.value.track}}  -  {{file.value.title}} ({{file.value.duration*1000 | date:'H:mm:ss':'UTC' | replace:'0:':''}})</span>
                 <span *ngIf="!file.value.track">{{file.value.title}}</span>
                 <br/>
             </span>
