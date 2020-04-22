@@ -50,21 +50,26 @@
     <a href="#" class="navbar-brand" (click)="showDash()"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="dashboard" >dashboard</mat-icon></a>
     <span class="navbar-brand flex-child long-and-truncated" ng-class="{'long': (currentsong['title_short'].length > 15), 'verylong': (currentsong['title_short'].length > 25)}"   [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{ currentsong['title_short'] }}</span>
 
-    <a href="#" class="navbar-brand" (click)="isMenuOpen = !isMenuOpen"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" >menu</mat-icon></a>
+    <a href="#" class="navbar-brand navbar-toggler" (click)="isMenuOpen = !isMenuOpen"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" >menu</mat-icon></a>
 
 
   <div class="collapse navbar-collapse"
        [ngClass]="{ 'show': isMenuOpen }">
-
+    <form class="form-inline my-2 my-lg-0 ml-auto">
+    
+    <a href="#" (click)="openStream()" class="nav-item nav-link" *ngIf="currentsong['active']"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream to kodi"  [@loadingTrigger]="loading['kodiload'] ? 'loading' : 'normal'">queue_music</mat-icon></a>
+    
+    <a href="#" (click)="stopStream()" class="nav-item nav-link" *ngIf="currentsong['active']"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop stream on kodi"  [@loadingTrigger]="loading['kodistop'] ? 'loading' : 'normal'">remove_from_queue</mat-icon></a>
+    
     <a href="#" class="nav-item nav-link" *ngIf="currentsong['next_state']" (click)="sendCommand(currentsong['next_state'])"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="{{ currentsong['next_title'] }}" >{{ currentsong['next_icon'] }}</mat-icon></a>
 
-    <a href="#" class="nav-item nav-link" (click)="sendCommand('stop')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop"  [@loadingTrigger]="loading['stop'] ? 'loading' : 'normal'">stop</mat-icon></a>
+    <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('stop')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop"  [@loadingTrigger]="loading['stop'] ? 'loading' : 'normal'">stop</mat-icon></a>
 
-    <a href="#" class="nav-item nav-link" (click)="sendCommand('prev')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="prev"  [@loadingTrigger]="loading['prev'] ? 'loading' : 'normal'">fast_rewind</mat-icon></a>
+    <a href="#" class="nav-item nav-link" *ngIf="!currentsong['consume']" (click)="sendCommand('prev')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="prev"  [@loadingTrigger]="loading['prev'] ? 'loading' : 'normal'">fast_rewind</mat-icon></a>
 
-    <a href="#" class="nav-item nav-link" (click)="sendCommand('next')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="next"  [@loadingTrigger]="loading['next'] ? 'loading' : 'normal'">fast_forward</mat-icon></a>
+    <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('next')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="next"  [@loadingTrigger]="loading['next'] ? 'loading' : 'normal'">fast_forward</mat-icon></a>
 
-    <form class="form-inline my-2 my-lg-0 ml-auto">
+    
         <input class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="search..." name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target.value; searchItem($event.target.value)" onfocus="this.select();" onmouseup="return false;">
 
         <a href="#" class="nav-item nav-link"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="settings" (click)="openSettings()">settings</mat-icon></a>
