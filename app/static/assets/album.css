@@ -118,4 +118,55 @@ height: 6.5em !important;
 width: 6.5em !important;
 }
 
+.outer_shadow {
+    height: 95px;
+    width: 95px;
+    margin: 2px 2px 2px 2px;
+}
+.album-cover-frame {
+    /*background: url("vinyl.png") no-repeat scroll transparent;*/
+    height: 92px;
+    width: 92px;
+    margin: 2px 0 6px 2px;
+    overflow: hidden;
+    position: relative;
+    background-size: 100%;
+}
+.album-cover-img {
+    border-radius: 10%;    
+}
+
+.albumlink {
+    margin: 3px 2px 2px 2px;
+}
+
+.inline-block {
+    display: inline-block;
+    position: relative;
+    /*  float: left; */
+
+}
+.album-cover {
+    /*margin: 0.9em; */
+    margin: 1px;
+    text-align: left;
+    vertical-align: top;
+/*    background-color: #FCFCFC; */
+    color:  #1a1713 !important;
+    border-radius: 5px;
+    height: 154px;
+    width: 100px;
+    overflow:hidden;
+    border-color: #F1F1F5;
+    border-width: 1.5px;
+    border-style: solid;
+}
+
+.album-cover:hover{
+    background-color: #F1F1F5;
+}
+
+.album-title {
+    word-wrap: break-word;
+}
 
