@@ -14,18 +14,44 @@
     color: #fff;
 
 }
+
+.long {
+    
+}
+.verylong {
+    
+}
+
+.truncate {
+  width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.long-and-truncated {
+  flex: 1;
+  
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flex-parent {
+  display: flex;
+  align-items: center;
+}
+
 </style>
 
 <nav class="navbar navbar-expand-lg navbar-dark">
-<div class="container">
+<div class="container flex-parent">
     <a href="#" class="navbar-brand" (click)="showDir(dir)"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="folders" >folder_open</mat-icon></a>
     <a href="#" class="navbar-brand" (click)="showDash()"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="dashboard" >dashboard</mat-icon></a>
-    <span class="navbar-brand" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{ currentsong['title_short'] }}</span>
+    <span class="navbar-brand flex-child long-and-truncated" ng-class="{'long': (currentsong['title_short'].length > 15), 'verylong': (currentsong['title_short'].length > 25)}"   [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{ currentsong['title_short'] }}</span>
 
-  <button class="navbar-toggler" type="button"
-          (click)="isMenuOpen = !isMenuOpen">
-    <span class="navbar-toggler-icon"></span>
-  </button>
+    <a href="#" class="navbar-brand" (click)="isMenuOpen = !isMenuOpen"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" >menu</mat-icon></a>
+
 
   <div class="collapse navbar-collapse"
        [ngClass]="{ 'show': isMenuOpen }">

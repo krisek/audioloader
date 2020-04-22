@@ -149,7 +149,7 @@ export class AppComponent {
     this.http2.get<any>(this.servicesBasePath + '/poll_currentsong?mpd_port=' + this.settings['mpd_port']).subscribe(data => {
       //console.log(data);
       this.currentsong = data;
-      this.currentsong['title_short'] = this.truncate(this.currentsong['display_title'], 28);
+      this.currentsong['title_short'] = this.currentsong['display_title']; //this.truncate(this.currentsong['display_title'], 28);
       if(this.settings['log'] == 'debug'){
           console.log(this.currentsong);
       }
@@ -172,7 +172,7 @@ export class AppComponent {
 
       this.currentsong = data;
       this.loading['currentsong'] = false;
-      this.currentsong['title_short'] = this.truncate(this.currentsong['display_title'], 28);
+      this.currentsong['title_short'] = this.currentsong['display_title'];//this.truncate(this.currentsong['display_title'], 28);
       console.log(this.currentsong);
     })
 
