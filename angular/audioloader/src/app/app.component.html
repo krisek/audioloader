@@ -1,6 +1,5 @@
 <app-toast aria-live="polite" aria-atomic="true"></app-toast>
 
-
 <style>
 
 .navbar-dark {
@@ -123,7 +122,7 @@
         </ng-container>
         <ng-container *ngIf="dash">
           <div class="row">
-           <div class="col-10 col-sm-10 col-md-9 col-lg-9 col-xl-9" id="div-randomset">
+           <div class="col-12 col-sm-9 col-md-9 col-lg-9 col-xl-9" id="div-randomset">
            <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['randomset']" >
             <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port"  (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
           </div>
@@ -136,9 +135,10 @@
             <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port"  (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
           </div>
 
-
           </div>
-           <div class="col-1 col-sm-2 col-md-3 col-lg-3 col-xl-3" id="div-history2">
+
+           <div class="col-12 col-sm-3 col-md-3 col-lg-3 col-xl-3" id="div-history2">
+          <hr class="d-block d-sm-none">
 
           <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['history']" >
             <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
