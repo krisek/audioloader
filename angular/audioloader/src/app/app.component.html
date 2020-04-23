@@ -122,7 +122,7 @@
         </ng-container>
         <ng-container *ngIf="dash">
           <div class="row">
-           <div class="col-12 col-sm-12 col-md-12 col-lg-9 col-xl-9" id="div-randomset">
+           <div class="col-11 col-sm-11 col-md-9 col-lg-9 col-xl-9" id="div-randomset">
            <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['randomset']" >
             <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port"  (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
           </div>
@@ -142,12 +142,11 @@
 
           </div>
 
-           <div class="col-12 col-sm-12 col-md-12 col-lg-3 col-xl-3" id="div-history2">
-
-          <div class='d-block d-sm-none hr'>
+           <div class="col-1 col-sm-1 col-md-3 col-lg-3 col-xl-3" id="div-history2">
+<!--      <div class='d-block d-sm-none hr'>
             <span class='hr-title'>History</span>
           </div>
-
+//-->
           <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['history']" >
             <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
           </div>

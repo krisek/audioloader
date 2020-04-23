@@ -242,7 +242,7 @@ def generate_randomset():
         mpd_client.idletimeout = 600
         mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
         albums = mpd_client.list('album')
-        randomset = choices(albums, k=16)
+        randomset = choices(albums, k=12)
         for album in randomset:
             try:
                 album_data = mpd_client.search('album', album['album'])
