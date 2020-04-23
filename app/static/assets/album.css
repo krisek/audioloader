@@ -72,7 +72,7 @@ input.ng-valid {
 .dash-icon {
   font-size: 1em;
   height: 1em !important;
-width: 1em !important;
+  width: 1em !important;
 }
 .navbar-icon {
 
@@ -93,7 +93,7 @@ width: 6.5em !important;
     /*background: url("vinyl.png") no-repeat scroll transparent;*/
     height: 128px;
     width: 128px;
-    margin: 2px 0 6px 2px;
+    margin: 2px 0 2px 2px;
     overflow: hidden;
     position: relative;
     border-radius: 5px;
@@ -144,12 +144,8 @@ a.albumlink {
     border-color: #F1F1F5;
     border-width: 1.5px;
     border-style: solid;
-    line-height: 1.3rem;
-    font-size: 1rem;
-
 
 }
-
 
 
 .album-cover:hover{
@@ -164,9 +160,34 @@ a.albumlink {
 
 div.album {
    font-family: Roboto, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    font-size: 1.25rem;
 
 }
+
+html {
+  font-size: 14px;
+}
+
+@media (max-width: 1921px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1441px) {
+  html {
+    font-size: 14px;
+  }
+
+
+@media (max-width: 700px) {
+  html {
+    font-size: 13px;
+  }
+}
+
+
+
+
 
 .togglestar .togglestar-icon {
     color: #d87a7a5b;
