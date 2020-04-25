@@ -1,21 +1,26 @@
 #Introduction
 
-Audioloader is a web based MPD client with special focus on playing music organized in folders. It consists of two main components: a Flask/Python based backend and an Angular/Bootstrap based, responsive web user interface.
+Audioloader is a web based [Music Player Deamon](http://www.musicpd.org) (MPD) client with special focus on playing music organized in folders. It consists of two main components: a Flask/Python based backend and an Angular/Bootstrap based, responsive web user interface.
 
-The Flask application is very thin, it does almost nothing more than proxying requests towards the MPD server from the web client.
+The Flask application is very thin, it does almost nothing but proxying requests towards the MPD server from the web client.
 
-The application feaures five ways of selecting and queuing (loading) music to MPD:
+The application feaures five ways of selecting music from MPD:
 
 1. selecting folders from a browser
 1. searching in the MPD database
-2. creating a random set of folders to choose music from (useful for large music libraries)
-3. selecting folders from the history
-4. marking folders as favourite
+1. creating a random set of folders to choose music from (useful for large music libraries)
+1. selecting folders from the history
+1. marking folders as favourite
 
 
 The MPD server runs on the same hosts where you run the application. You can configure any supported output method; a very common use case is to install the application on a Raspberry Pi (or home server), configure MPD with HTTP stream output, so that you can stream music from all of your devices.
 
 If you configure the MPD server with a HTTP stream output, the application can load this stream to a Kodi server, so that you can listen music on your Kodi connected sound system.
+
+This drawing shows such a setup:
+
+
+
 
 
 #Installation
@@ -91,7 +96,7 @@ Two scripts are included in the repository.
 
 7. You've been warned
 
-No responsililty on my side for any damage. The application is intended to be used on friendly or appropriately protected environemt.
+No responsililty on my side for any damage. The application is intended to be used in friendly or appropriately protected network environemt.
 
 
 # Use
@@ -100,9 +105,9 @@ Imagine you run the application with standalon uwsgi, so you just need to visit 
 
 
 ## Navigation bar
-When you visit the site for the first time, you land on the dash. But before looking at this in detail, let's have a look on the navigation bar.
+When you visit the site for the first time, you land on the dash. But before looking the dash in detail, let's have a look on the navigation bar.
 
-The first icon opens the directory view. The second one is to open the dash. In the middle you see the title of the currently playing song and the various media controls (if there's anything playing). On the left side you see a search bar: it needs minimum four characters to start searching.
+The first icon on the left side opens the directory view. The second opens the dash. In the middle you see the title of the currently playing song and the various media controls (if there's anything playing). On the left side you see a search bar: it needs minimum four characters to start searching.
 
 ### Settings
 The gear button opens the settings dialog.
@@ -117,20 +122,18 @@ Kodi hostname: where is your Kodi server accessible on the network. The applicat
 
 Log level: not relevant (only debug is supported for the time being)
 
-Most of the settings work out of the box, though it makes sense to set a client id, and obvoiusly for Kodi related settings there is no default, this is something you need to figure out.
+Most of the settings work out of the box, though it makes sense to set a client id, and obvoiusly for Kodi related settings there is no default, this is something you need to figure out yourself.
 
 ## Music selection
-The directory browser speaks for it self.
+The directory browser speaks for itself.
 
 The dash contains three areas the random set, the favourites and the history.
 
-Having random directories presented is an important feature if you have a large amount of albums, and you just want listening something but you don#t have anything particular in mind.
-
-The random set is presents 12 random albums from your MPD database. The set is persistent, but only one exists at the same time for a client. If click on the refresh button a new one will be generated, and the exisiting one will be lost.
+Having random directories presented is an important feature, if you have a large amount of albums, and you just want listening something but you don''t have anything particular in mind. The random set presents 12 random albums from your MPD database. The set is persistent, but only one exists at the same time for a client. If you click on the refresh button a new one will be generated, and the exisiting set will be lost.
 
 On the right hand side you find your listening history; the last 10 loaded directores are saved.
 
-If you mark a folder as favourite it will be listed in the bottom. You can have as much favourites as you want.
+If you mark a folder as favourite it will be listed in the bottom of the dash. You can have as much favourites as you want.
 
 
 # TODO / ISSUES
