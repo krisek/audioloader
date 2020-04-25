@@ -242,15 +242,22 @@ def generate_randomset():
         mpd_client.idletimeout = 600
         mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
         albums = mpd_client.list('album')
-        randomset = choices(albums, k=12)
-        for album in randomset:
-            try:
-                album_data = mpd_client.search('album', album['album'])
-                client_data['randomset'].append(os.path.dirname(album_data[0]['file']))
-            except Exception as e:
-                app.logger.debug("failed to add album to randomset " + album['album'] + " error:" + str(e))
-        mpd_client.disconnect()
-        client_data_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.randomset.json')
+
+        i = 0
+        while len(client_data['randomset']) < 12 or i < 20:
+            randomset = choices(albums, k=12)
+            i = i + 1
+
+            for album in randomset:
+                try:
+                    album_data = mpd_client.search('album', album['album'])
+                    client_data['randomset'].append(os.path.dirname(album_data[0]['file']))
+                except Exception as e:
+                    app.logger.debug("failed to add album to randomset " + album['album'] + " error:" + str(e))
+            mpd_client.disconnect()
+            client_data_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.randomset.json')
+
+
 
         if client_id != '' and client_data_file.startswith(app.config['CLIENT_DB']) and re.search(r'[^A-Za-z0-9_\-\.]', client_data_file):
         #write back the file
