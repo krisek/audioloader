@@ -452,7 +452,11 @@ def mpd_proxy():
             content['name'] = request.args.get('directory', '')
         elif(request.path == '/addplay'):
             mpd_client.consume(1)
-            mpd_client.add('signal.mp3')
+            try:
+                mpd_client.add('signal.mp3')
+            except Exception as e:
+                app.logger.info('signal.mp3 was not queued, music will start immediately')
+                app.logger.debug(traceback.format_exc())
             directory = request.args.get('directory', '.')
             content = mpd_client.add(directory)
             content = mpd_client.play()
