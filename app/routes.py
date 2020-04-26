@@ -374,6 +374,7 @@ def data():
 @app.route('/addplay', methods=['GET', 'POST'])
 @app.route('/play', methods=['GET', 'POST'])
 @app.route('/pause', methods=['GET', 'POST'])
+@app.route('/playpause', methods=['GET', 'POST'])
 @app.route('/next', methods=['GET', 'POST'])
 @app.route('/prev', methods=['GET', 'POST'])
 @app.route('/stop', methods=['GET', 'POST'])
@@ -477,6 +478,12 @@ def mpd_proxy():
             content = mpd_client.play()
         elif(request.path == '/pause'):
             content = mpd_client.pause()
+        elif(request.path == '/playpause'):
+            status = mpd_client.status()
+            if(status.get('state','pause') == 'pause'):
+                content = mpd_client.play()
+            else:
+                content = mpd_client.pause()
         elif(request.path == '/next'):
             content = mpd_client.next()
         elif(request.path == '/prev'):
