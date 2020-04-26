@@ -1,4 +1,4 @@
-#Introduction
+# Introduction
 
 Audioloader is a web based [Music Player Deamon](http://www.musicpd.org) (MPD) client with special focus on playing music organized in folders.
 
@@ -19,7 +19,7 @@ The Flask application runs on the same system where you run MPD. You can configu
 
 If you configure the MPD server with a HTTP stream output, the application can load this stream to a Kodi server, so that you can listen music on your Kodi connected sound system.
 
-#Installation
+# Installation
 
 I detail here how to install the application on Debian/Ubuntu derivatives, but you can get it running wherever Python and Pip are available.
 
