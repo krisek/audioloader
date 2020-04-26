@@ -2,6 +2,8 @@
 
 Audioloader is a web based [Music Player Deamon](http://www.musicpd.org) (MPD) client with special focus on playing music organized in folders.
 
+[![Screenshot](https://i.postimg.cc/fyCT7vS9/Screenshot-from-2020-04-26-16-03-24.png)](https://postimg.cc/fS3NDmKz)
+
 The software has two components: a Flask/Python based backend and an Angular/Bootstrap based, responsive web user interface.
 
 The Flask application is very thin, it does almost nothing but proxying requests towards the MPD server from the web client.
