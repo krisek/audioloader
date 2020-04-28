@@ -288,7 +288,7 @@ export class AppComponent {
   }
 
   newSet(){
-
+    this.showSuccess('requesting new set');
     this.http.get<any>(this.servicesBasePath + '/generate_randomset?mpd_port=' + this.settings['mpd_port'] + '&client_id=' + this.settings['client_id']).subscribe(data => {
       this.updateSpec('randomset');
       this.showSuccess('new set generated');
