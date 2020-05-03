@@ -13,6 +13,8 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
 
 import { ToastService } from './toast-service.service';
 
+import { interval } from 'rxjs';
+
 @Component({
   selector: 'app-root',
   animations: [
@@ -95,6 +97,10 @@ export class AppComponent {
   dash = false;
   active_area = "browser";
 
+  pollCounter = interval(30000);
+
+  lastPolled = 0;
+
   constructor(private environment: AppConfigService, private http: HttpClient, private modalService: NgbModal, private http2: HttpClient, public toastService: ToastService) {
     this.servicesBasePath = environment.config.servicesBasePath;
     }
@@ -118,8 +124,6 @@ export class AppComponent {
       this.settings['target'] = localStorage['target'];
     }
 
-
-
     this.settings['stream'] = localStorage['stream'];
     this.settings['log'] = localStorage['log'];
 
@@ -138,8 +142,16 @@ export class AppComponent {
     this.showDash();
 
     this.updateCurrentSong();
-    this.pollCurrentsong();
-  };
+    this.pollCurrentsong()
+
+    this.pollCounter.subscribe(n => {
+      if(this.settings['log'] == 'debug') console.log('checking lastPolled');
+      if(Date.now() - this.lastPolled > 60000){
+        console.log('polled too long time ago ' + this.lastPolled + ' vs. ' + Date.now());
+        this.pollCurrentsong();
+        }
+      });
+    };
 
   delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
@@ -150,6 +162,7 @@ export class AppComponent {
       //console.log(data);
       this.currentsong = data;
       this.currentsong['title_short'] = this.currentsong['display_title']; //this.truncate(this.currentsong['display_title'], 28);
+      this.lastPolled = Date.now();
       if(this.settings['log'] == 'debug'){
           console.log(this.currentsong);
       }
