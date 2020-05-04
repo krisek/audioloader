@@ -158,19 +158,20 @@ export class AppComponent {
   };
 
   pollCurrentsong(){
+    this.lastPolled = Date.now();
     this.http2.get<any>(this.servicesBasePath + '/poll_currentsong?mpd_port=' + this.settings['mpd_port']).subscribe(data => {
       //console.log(data);
       this.currentsong = data;
       this.currentsong['title_short'] = this.currentsong['display_title']; //this.truncate(this.currentsong['display_title'], 28);
       this.lastPolled = Date.now();
-      if(this.settings['log'] == 'debug'){
-          console.log(this.currentsong);
-      }
+      if(this.settings['log'] == 'debug') console.log(this.currentsong);
       this.pollCurrentsong();
     },
     async error => {
-      console.log('error polling currentsong');
+      console.log('error polling currentsong, waiting a bit');
+      this.lastPolled = Date.now();
       await this.delay(5000);
+      if(this.settings['log'] == 'debug') console.log("going to poll again");  
       this.pollCurrentsong();
     });
 
