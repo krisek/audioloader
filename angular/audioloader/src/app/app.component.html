@@ -26,7 +26,7 @@
 }
 
 .long-and-truncated {
-  flex: 2;
+  flex: 100;
 
   white-space: nowrap;
   overflow: hidden;
@@ -38,13 +38,26 @@
   align-items: center;
 }
 
+::ng-deep .progress-bar {
+  background-color: #ccc !important;
+}
+::ng-deep .progress {
+  height: 1px !important;
+  background-color: inherit !important;
+}
+
 </style>
 
 <nav class="navbar navbar-expand-lg navbar-dark">
 <div class="container flex-parent">
     <a href="#" class="navbar-brand" (click)="showDir(dir)"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="folders" >folder_open</mat-icon></a>
     <a href="#" class="navbar-brand" (click)="showDash()"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="dashboard" >dashboard</mat-icon></a>
-    <span class="navbar-brand flex-child long-and-truncated" ng-class="{'long': (currentsong['title_short'].length > 15), 'verylong': (currentsong['title_short'].length > 25)}"   [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()">{{ currentsong['title_short'] }}</span>
+    <div class="navbar-brand flex-child long-and-truncated" ng-class="{'long': (currentsong['title_short'].length > 15), 'verylong': (currentsong['title_short'].length > 25)}"   [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()"><span>{{ currentsong['title_short'] }}</span>
+    <ngb-progressbar *ngIf="currentsong['active']" [value]="currentsong['elapsed']" [max]="currentsong['duration']"></ngb-progressbar>
+
+
+    </div>
+
 
     <a href="#" class="navbar-brand navbar-toggler" (click)="isMenuOpen = !isMenuOpen"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" >menu</mat-icon></a>
 
@@ -112,7 +125,7 @@
             </div>
             </div>
             <span class="" *ngFor="let file of tree_file | keyvalue">
-                <span *ngIf="file.value.track">{{file.value.track}}  -  {{file.value.title}} ({{file.value.duration*1000 | date:'H:mm:ss':'UTC' | replace:'0:':''}})</span>
+                <span *ngIf="file.value.track">{{file.value.track}}  -  {{file.value.title}} ({{file.value.duration*1000 | date:'H:mm:ss':'UTC' | replace:'0:':'' | replace:'0:':''}})</span>
                 <span *ngIf="!file.value.track">{{file.value.title}}</span>
                 <br/>
             </span>
@@ -169,6 +182,3 @@
     </p>
   </div>
 </footer>
-
-
-

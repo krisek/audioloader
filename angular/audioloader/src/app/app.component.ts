@@ -97,7 +97,7 @@ export class AppComponent {
   dash = false;
   active_area = "browser";
 
-  pollCounter = interval(30000);
+  pollCounter = interval(1000);
 
   lastPolled = 0;
 
@@ -146,6 +146,9 @@ export class AppComponent {
 
     this.pollCounter.subscribe(n => {
       if(this.settings['log'] == 'debug') console.log('checking lastPolled');
+      if(typeof(this.currentsong['elapsed']) != 'undefined' && this.currentsong['state'] == 'play'){
+        this.currentsong['elapsed']++;
+      }
       if(Date.now() - this.lastPolled > 60000){
         console.log('polled too long time ago ' + this.lastPolled + ' vs. ' + Date.now());
         this.pollCurrentsong();
@@ -171,7 +174,7 @@ export class AppComponent {
       console.log('error polling currentsong, waiting a bit');
       this.lastPolled = Date.now();
       await this.delay(5000);
-      if(this.settings['log'] == 'debug') console.log("going to poll again");  
+      if(this.settings['log'] == 'debug') console.log("going to poll again");
       this.pollCurrentsong();
     });
 

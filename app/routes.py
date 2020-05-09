@@ -152,10 +152,11 @@ def process_currentsong(currentsong):
     if 'title' not in currentsong and 'file' in currentsong:
         currentsong['title'] = currentsong['file']
         currentsong['display_title'] = currentsong['file']
-    elif 'title' in currentsong and 'track' not in currentsong:
-        currentsong['display_title'] = currentsong['title']
-    elif 'title' in  currentsong and 'track' in currentsong:
-        currentsong['display_title'] = currentsong['track'] + ' - ' + currentsong['title']
+    else:
+        title_elements = [currentsong.get('track',None), currentsong.get('title',None), currentsong.get('album',None), currentsong.get('artist',None) ]
+        title_elements = list(filter(None, title_elements))
+        currentsong['display_title'] = ' - '.join(title_elements)
+
 
     currentsong['active'] = False
     if currentsong.get('state','stop') in ['play', 'pause']:
@@ -517,5 +518,3 @@ def catch_all(path):
   #path = path.upper
   request_d = request.args.__dict__
   return Response(render_template('index.html', data=request_d))
-
-
