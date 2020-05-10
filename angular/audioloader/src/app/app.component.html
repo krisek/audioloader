@@ -4,8 +4,18 @@
 
 .navbar-dark {
     background-color: #5D7AB1;
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem;
+    height: 3.1rem;
 }
 
+.form-control {
+  height: 2.1rem;
+  padding-top: 0rem;
+  padding-bottom: 0rem;
+
+
+}
 .nav-link {
     color: #fff;
 
@@ -52,7 +62,7 @@
 <div class="container flex-parent">
     <a href="#" class="navbar-brand" (click)="showDir(dir)"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="folders" >folder_open</mat-icon></a>
     <a href="#" class="navbar-brand" (click)="showDash()"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="dashboard" >dashboard</mat-icon></a>
-    <div class="navbar-brand flex-child long-and-truncated" ng-class="{'long': (currentsong['title_short'].length > 15), 'verylong': (currentsong['title_short'].length > 25)}"   [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()"><span>{{ currentsong['title_short'] }}</span>
+    <div class="navbar-brand flex-child long-and-truncated" ng-class="{'long': (currentsong['title_short'].length > 15), 'verylong': (currentsong['title_short'].length > 25)}"   [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong()"><div class="long-and-truncated" style="font-size: 0.7rem; line-height:1rem;">{{ currentsong['display_title_top'] }}</div><div  class="long-and-truncated"  style="font-size: 1rem;">{{ currentsong['title_short'] }}</div>
     <ngb-progressbar *ngIf="currentsong['active']" [value]="currentsong['elapsed']" [max]="currentsong['duration']"></ngb-progressbar>
 
 

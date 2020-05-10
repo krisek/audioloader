@@ -152,10 +152,15 @@ def process_currentsong(currentsong):
     if 'title' not in currentsong and 'file' in currentsong:
         currentsong['title'] = currentsong['file']
         currentsong['display_title'] = currentsong['file']
+        currentsong['display_title_top'] = ''
     else:
-        title_elements = [currentsong.get('track',None), currentsong.get('title',None), currentsong.get('album',None), currentsong.get('artist',None) ]
+        title_elements = [currentsong.get('track',None), currentsong.get('title',None)]
+        album_elements = [currentsong.get('album',None), currentsong.get('artist',None) ]
         title_elements = list(filter(None, title_elements))
+        album_elements = list(filter(None, album_elements))
         currentsong['display_title'] = ' - '.join(title_elements)
+        currentsong['display_title_top'] = ' - '.join(album_elements)
+
 
 
     currentsong['active'] = False
