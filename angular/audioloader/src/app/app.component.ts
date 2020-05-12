@@ -6,14 +6,12 @@ import { SettingsComponent } from './settings/settings.component';
 import { PopupComponent } from './popup/popup.component';
 import { ToastComponent } from './toast/toast.component';
 import { AlbumcellComponent } from './albumcell/albumcell.component';
-
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-
 import { trigger, state, style, animate, transition } from '@angular/animations';
-
 import { ToastService } from './toast-service.service';
-
 import { interval } from 'rxjs';
+
+import { HostListener } from '@angular/core';
 
 @Component({
   selector: 'app-root',
@@ -101,6 +99,23 @@ export class AppComponent {
 
   lastPolled = 0;
 
+    @HostListener('window:focus', ['$event'])
+    onFocus(event: FocusEvent): void {
+      if(Date.now() - this.lastPolled > 30000){
+        this.pollCurrentsong();
+      }
+      this.pollCounter = interval(1000);
+    }
+
+    @HostListener('window:blur', ['$event'])
+    onBlur(event: FocusEvent): void {
+        if(this.settings['log'] == 'debug') console.log('blur event');
+        this.pollCounter = interval(5000);
+    }
+
+
+
+
   constructor(private environment: AppConfigService, private http: HttpClient, private modalService: NgbModal, private http2: HttpClient, public toastService: ToastService) {
     this.servicesBasePath = environment.config.servicesBasePath;
     }
@@ -145,7 +160,6 @@ export class AppComponent {
     this.pollCurrentsong()
 
     this.pollCounter.subscribe(n => {
-      if(this.settings['log'] == 'debug') console.log('checking lastPolled');
       if(typeof(this.currentsong['elapsed']) != 'undefined' && this.currentsong['state'] == 'play'){
         this.currentsong['elapsed']++;
       }
@@ -153,6 +167,9 @@ export class AppComponent {
         console.log('polled too long time ago ' + this.lastPolled + ' vs. ' + Date.now());
         this.pollCurrentsong();
         }
+      else{
+        if(this.settings['log'] == 'debug') console.log('poll seems to be ok');
+      }
       });
     };
 
