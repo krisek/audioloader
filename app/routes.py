@@ -155,7 +155,7 @@ def process_currentsong(currentsong):
         currentsong['display_title_top'] = ''
     else:
         title_elements = [currentsong.get('track',None), currentsong.get('title',None)]
-        album_elements = [currentsong.get('album',None), currentsong.get('artist',None) ]
+        album_elements = [currentsong.get('artist',None), currentsong.get('album',None) ]
         title_elements = list(filter(None, title_elements))
         album_elements = list(filter(None, album_elements))
         currentsong['display_title'] = ' - '.join(title_elements)
