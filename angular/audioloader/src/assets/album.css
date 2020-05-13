@@ -106,7 +106,8 @@ width: 6.5em !important;
 .albumlink {
 
     /* color: #1a1713 !important; font-size: 0.83em; */
-    color: #454857f0 !important;
+    /*color: #454857f0 !important;*/
+    color: #000 !important;
     /*margin: 3px 2px 2px 2px;*/
 
 }
@@ -158,10 +159,6 @@ a.albumlink {
 
 }
 
-div.album {
-   font-family: Roboto, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-
-}
 
 html {
   font-size: 14px;
@@ -177,7 +174,7 @@ html {
   html {
     font-size: 14px;
   }
-
+}
 
 
 @media (max-width: 700px) {
