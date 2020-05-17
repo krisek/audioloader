@@ -250,9 +250,11 @@ def generate_randomset():
         albums = mpd_client.list('album')
 
         i = 0
-        while len(client_data['randomset']) < 12 or i < 20:
+        while len(client_data['randomset']) < 12 :
             randomset = choices(albums, k=12)
             i = i + 1
+            if i == 20:
+                break
 
             for album in randomset:
                 try:
@@ -260,8 +262,11 @@ def generate_randomset():
                     client_data['randomset'].append(os.path.dirname(album_data[0]['file']))
                 except Exception as e:
                     app.logger.debug("failed to add album to randomset " + album['album'] + " error:" + str(e))
-            mpd_client.disconnect()
-            client_data_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.randomset.json')
+
+            client_data['randomset'] = list(set(client_data['randomset']))
+
+        mpd_client.disconnect()
+        client_data_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.randomset.json')
 
 
 
