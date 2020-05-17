@@ -248,7 +248,7 @@ def generate_randomset():
         mpd_client.idletimeout = 600
         mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
         albums = mpd_client.list('album')
-
+        filter = request.args.get('set_filter', app.config.get('SET_FILTER', ''))
         i = 0
         while len(client_data['randomset']) < 12 :
             randomset = choices(albums, k=12)
@@ -259,7 +259,12 @@ def generate_randomset():
             for album in randomset:
                 try:
                     album_data = mpd_client.search('album', album['album'])
-                    client_data['randomset'].append(os.path.dirname(album_data[0]['file']))
+                    if filter == '':
+                        client_data['randomset'].append(os.path.dirname(album_data[0]['file']))
+                    else:
+                        if not re.search(app.config['SET_FILTER'], album_data[0]['file']):
+                            client_data['randomset'].append(os.path.dirname(album_data[0]['file']))
+
                 except Exception as e:
                     app.logger.debug("failed to add album to randomset " + album['album'] + " error:" + str(e))
 
