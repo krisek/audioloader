@@ -268,7 +268,7 @@ def generate_randomset():
                 except Exception as e:
                     app.logger.debug("failed to add album to randomset " + album['album'] + " error:" + str(e))
 
-            client_data['randomset'] = list(set(client_data['randomset']))
+            client_data['randomset'] = list(set(client_data['randomset']))[0:12]
 
         mpd_client.disconnect()
         client_data_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.randomset.json')
