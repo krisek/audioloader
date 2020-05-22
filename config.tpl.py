@@ -17,5 +17,5 @@ class Config(object):
   LOG_LEVEL = 'info'
   #hostname of default kodi server to load music to
   KODI = 'kodi.localdomain'
-  #filtering albums from randomset matching this regext
+  #filtering albums from randomset matching this regexp (optional, can be left empty)
   SET_FILTER = r'kids|horspiel'
