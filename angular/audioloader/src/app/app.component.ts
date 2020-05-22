@@ -99,6 +99,10 @@ export class AppComponent {
 
   lastPolled = 0;
 
+  pollMinDelta = 20000
+  lastPolledStarted = -1 * this.pollMinDelta;
+
+
     @HostListener('window:focus', ['$event'])
     onFocus(event: FocusEvent): void {
       if(Date.now() - this.lastPolled > 30000){
@@ -163,8 +167,9 @@ export class AppComponent {
       if(typeof(this.currentsong['elapsed']) != 'undefined' && this.currentsong['state'] == 'play'){
         this.currentsong['elapsed']++;
       }
-      if(Date.now() - this.lastPolled > 60000){
-        console.log('polled too long time ago ' + this.lastPolled + ' vs. ' + Date.now());
+      var delta = Date.now() - this.lastPolled;
+      if(delta > 60000){
+        console.log('polled too long time ago ' + this.lastPolled + ' vs. ' + Date.now() + '  d:' + delta );
         this.pollCurrentsong();
         }
       else{
@@ -177,8 +182,19 @@ export class AppComponent {
     return new Promise( resolve => setTimeout(resolve, ms) );
   };
 
-  pollCurrentsong(){
+  async pollCurrentsong(){
     this.lastPolled = Date.now();
+    var delta = this.lastPolled - this.lastPolledStarted;
+    if(delta < this.pollMinDelta){
+      if(this.settings['log'] == 'debug') console.log('we cannot poll this often ' + this.lastPolled  + ' vs. '+ this.lastPolledStarted  + ' (d: '+delta+'), delay');
+      await this.delay(this.pollMinDelta/2);
+    }
+    else{
+      if(this.settings['log'] == 'debug') console.log('poll can be started now ' + this.lastPolled  + ' vs. '+ this.lastPolledStarted + ' (d: '+delta+')');
+
+    }
+
+    this.lastPolledStarted = Date.now();
     this.http2.get<any>(this.servicesBasePath + '/poll_currentsong?mpd_port=' + this.settings['mpd_port']).subscribe(data => {
       //console.log(data);
       this.currentsong = data;
@@ -403,7 +419,8 @@ export class AppComponent {
   sendCommand(command){
     console.log("sendCommand: " + command);
     this.loading[command] = true;
-
+    //we need to enable polling again (user might send command quickly)
+    this.lastPolledStarted = -1 * this.pollMinDelta;
     this.http.get<any>(this.servicesBasePath + '/' + command + '?mpd_port=' + this.settings['mpd_port']).subscribe(data => {
       console.log("returned " + command);
       this.loading[command] = false;

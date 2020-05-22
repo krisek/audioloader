@@ -187,12 +187,12 @@ def poll_currentsong():
     content = {}
     mpd_client = MPDClient()
 
-    mpd_client.timeout = 20000
-    mpd_client.idletimeout = 20000
+    mpd_client.timeout = 40000
+    mpd_client.idletimeout = 40000
     mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
     mpd_client.send_idle()
     app.logger.debug("waiting for mpd_client")
-    select([mpd_client], [], [], 10)[0]
+    select([mpd_client], [], [], 30)[0]
     mpd_client.noidle()
     content = mpd_client.currentsong()
     content.update(mpd_client.status())
