@@ -51,6 +51,7 @@ cd python-mpd2
 python setup.py install
 cd ..
 pip install -r < requirements.txt
+cp app.ini.tpl app.ini
 ```
 
 4. Configure
@@ -147,7 +148,3 @@ If you mark a folder as favourite it will be listed in the bottom of the dash. Y
 
 # About
 The application was created by Kristof Imre Szabo.
-
-
-
-
