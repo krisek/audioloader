@@ -27,8 +27,12 @@ server {
             allow all;
         }
 
+        set $loggable 1;
+        if ($request_filename ~ poll_currentsong){
+           set $loggable 0;
+        }
 
-
+        access_log /var/log/nginx/access.log combined if=$loggable;
 
         location / {
                 include uwsgi_params;
