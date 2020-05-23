@@ -99,6 +99,8 @@ export class AppComponent {
 
   lastPolled = 0;
 
+  pollWaitState = false;
+
   pollMinDelta = 20000
   lastPolledStarted = -1 * this.pollMinDelta;
 
@@ -183,11 +185,17 @@ export class AppComponent {
   };
 
   async pollCurrentsong(){
+
+    if(this.pollWaitState && Date.now() - this.lastPolled <= 60000){
+      if(this.settings['log'] == 'debug') console.log('someone is trying to open a 2nd poll -- no fun');
+      return -1;
+    }
+
     this.lastPolled = Date.now();
     var delta = this.lastPolled - this.lastPolledStarted;
     if(delta < this.pollMinDelta){
       if(this.settings['log'] == 'debug') console.log('we cannot poll this often ' + this.lastPolled  + ' vs. '+ this.lastPolledStarted  + ' (d: '+delta+'), delay');
-      await this.delay(this.pollMinDelta/2);
+      await this.delay(this.pollMinDelta - delta);
     }
     else{
       if(this.settings['log'] == 'debug') console.log('poll can be started now ' + this.lastPolled  + ' vs. '+ this.lastPolledStarted + ' (d: '+delta+')');
@@ -195,12 +203,14 @@ export class AppComponent {
     }
 
     this.lastPolledStarted = Date.now();
+    this.pollWaitState = true;
     this.http2.get<any>(this.servicesBasePath + '/poll_currentsong?mpd_port=' + this.settings['mpd_port']).subscribe(data => {
       //console.log(data);
       this.currentsong = data;
       this.currentsong['title_short'] = this.currentsong['display_title']; //this.truncate(this.currentsong['display_title'], 28);
       this.lastPolled = Date.now();
       if(this.settings['log'] == 'debug') console.log(this.currentsong);
+      this.pollWaitState = false;
       this.pollCurrentsong();
     },
     async error => {
@@ -208,6 +218,7 @@ export class AppComponent {
       this.lastPolled = Date.now();
       await this.delay(5000);
       if(this.settings['log'] == 'debug') console.log("going to poll again");
+      this.pollWaitState = false;
       this.pollCurrentsong();
     });
 
