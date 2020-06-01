@@ -16,27 +16,45 @@ export class PopupComponent {
   @Input() servicesBasePath;
   @Input() stream;
   @Input() target;
+  @Input() players;
 
   @Output() messageEvent = new EventEmitter<object>();
 
-  load = false
+  constructor(public activeModal: NgbModal, private http: HttpClient) {
+  }
 
-  constructor(public activeModal: NgbModal, private http: HttpClient) {}
-
-  updateLoad(event){
-    if (event.checked) {
-      this.load = true;
+  ngOnInit(){
+    for(let i = 0; i < this.players.length; i++){
+          this.players[i]['load'] = false;
     }
-    else{
-      this.load = false;
 
+  }
+
+  updateLoad(event, location){
+    for(let i = 0; i < this.players.length; i++){
+      if(this.players[i]['location'] == location){
+        if (event.checked) {
+          this.players[i]['load'] = true;
+        }
+        else{
+          this.players[i]['load'] = false;
+
+        }
+        console.log('load: ' +this.players[i]['location'] + ' ' + this.players[i]['load']);
+      }
     }
-    console.log(this.load);
+
   };
 
    addDir(dir){
-    console.log('emit ' + dir + ' enqueue ' + this.load);
-    this.messageEvent.emit({'dir': dir, 'load': this.load});
+    var load = new Array();
+    for(let i = 0; i < this.players.length; i++){
+      if(this.players[i]['load']){
+        load.push(i)
+      }
+    }
+    console.log('emit ' + dir + ' enqueue ' + load.join(',') );
+    this.messageEvent.emit({'dir': dir, 'load': load});
    };
 
 }

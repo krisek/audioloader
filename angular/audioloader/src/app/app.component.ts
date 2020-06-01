@@ -77,7 +77,7 @@ export class AppComponent {
     favourites: []
   }
 
-
+  streamplayers = false;
   list_dir_alpha = {};
   list_alpha = [];
   lookfor = "";
@@ -90,7 +90,7 @@ export class AppComponent {
     'client_id': 'guest'
   }
 
-  currentsong = {'title': 'not playing', 'active': false, 'title_short': 'not playing', 'album': '', 'track': '', 'artist': ''};
+  currentsong = {'title': 'not playing', 'active': false, 'title_short': 'not playing', 'album': '', 'track': '', 'artist': '', 'players': []};
 
   dash = false;
   active_area = "browser";
@@ -211,6 +211,7 @@ export class AppComponent {
       this.lastPolled = Date.now();
       if(this.settings['log'] == 'debug') console.log(this.currentsong);
       this.pollWaitState = false;
+      if(this.currentsong.players.length > 1) this.streamplayers = true; else this.streamplayers = false;
       this.pollCurrentsong();
     },
     async error => {
@@ -233,6 +234,7 @@ export class AppComponent {
 
       this.currentsong = data;
       this.loading['currentsong'] = false;
+      if(this.currentsong.players.length > 1) this.streamplayers = true; else this.streamplayers = false;
       this.currentsong['title_short'] = this.currentsong['display_title'];//this.truncate(this.currentsong['display_title'], 28);
       console.log(this.currentsong);
     })
@@ -420,10 +422,9 @@ export class AppComponent {
       this.updateSpec('history');
 
       this.updateCurrentSong();
-      if(addObject['load']){
-        this.openStream();
+      for(let i = 0; i < addObject['load'].length; i++){
+        this.openStream(addObject['load'][i]);
       }
-
     })
   };
 
@@ -542,9 +543,9 @@ export class AppComponent {
     modalRef.componentInstance.name = dir;
     modalRef.componentInstance.encoded = encodeURIComponent(dir);
     modalRef.componentInstance.servicesBasePath = this.servicesBasePath;
-
+    modalRef.componentInstance.players = this.currentsong.players;
     modalRef.componentInstance.messageEvent.subscribe((receivedEntry) => {
-      console.log("openModal returned: " + receivedEntry['dir'] + " " + receivedEntry['load']);
+      console.log("openModal returned: " + receivedEntry['dir'] + " " + receivedEntry['load'].join(','));
       this.addDir(receivedEntry);
     })
 
@@ -561,14 +562,19 @@ export class AppComponent {
 
   }
 
-  openStream(){
-    console.log("openStream");
+  openStream(player_index){
+    console.log("openStream " +this.currentsong.players[player_index]['name']);
     this.loading['kodiload'] = true;
     //http://localhost:5000/kodi?server=192.168.1.51&action=Player.Open&stream=http://192.168.1.185:18080/audio.mp3"
-    this.http.get<any>(this.servicesBasePath + '/kodi?mpd_port=' + this.settings['mpd_port'] + '&action=Player.Open&server=' + localStorage['target'] + "&stream=" + localStorage['stream']).subscribe(data => {
+    var target = 'kodi';
+    if(this.currentsong.players[player_index]['model_name'] != 'Kodi'){
+      target = 'upnp';
+    }
+
+    this.http.get<any>(this.servicesBasePath + '/'+ target +'?mpd_port=' + this.settings['mpd_port'] + '&action=Player.Open&server=' + this.currentsong.players[player_index]['location'] + "&stream=" + localStorage['stream']  ).subscribe(data => {
       this.loading['kodiload'] = false;
       console.log("stream opened ");
-      this.showSuccess('loaded to kodi');
+      this.showSuccess('loaded to ' + this.currentsong.players[player_index]['name']);
     },
     async error => {
       console.log('error open stream');
@@ -577,14 +583,19 @@ export class AppComponent {
 
   }
 
-  stopStream(){
-    console.log("stopStream");
-        this.loading['kodistop'] = true;
+  stopStream(player_index){
+    console.log("stopStream" +this.currentsong.players[player_index]['name']);
+    this.loading['kodistop'] = true;
 
-    this.http.get<any>(this.servicesBasePath + '/kodi?mpd_port=' + this.settings['mpd_port'] + '&action=Player.Stop&server=' + localStorage['target'] + "&stream=" + localStorage['stream']).subscribe(data => {
+    var target = 'kodi';
+    if(this.currentsong.players[player_index]['model_name'] != 'Kodi'){
+      target = 'upnp';
+    }
+
+    this.http.get<any>(this.servicesBasePath + '/'+target+'?mpd_port=' + this.settings['mpd_port'] + '&action=Player.Stop&server=' + this.currentsong.players[player_index]['location'] + "&stream=" + localStorage['stream']).subscribe(data => {
       this.loading['kodistop'] = false;
       console.log("stream stopped");
-      this.showSuccess('unloaded from kodi');
+      this.showSuccess('unloaded from '  + this.currentsong.players[player_index]['name']);
     })
 
   }

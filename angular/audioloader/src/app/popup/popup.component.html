@@ -5,7 +5,8 @@
     <div class="modal-body">
       <p style="text-align: center;"><img src="{{ servicesBasePath }}/cover?directory={{ encoded }}" height="128" style="border-radius: 5px;" class="album-cover-img"/></p>
 
-       <p style="text-align: center;"><mat-slide-toggle [checked]="!!load" (change)="updateLoad($event)">load stream to Kodi</mat-slide-toggle></p>
+      <p style="text-align: center;">
+      <span *ngFor="let player of players"><mat-slide-toggle [checked]="!!player.load" (change)="updateLoad($event, player.location)">{{ player.name }}</mat-slide-toggle>&nbsp;&nbsp;</span></p>
 
     </div>
     <div class="modal-footer">

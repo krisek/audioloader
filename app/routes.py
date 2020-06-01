@@ -32,6 +32,8 @@ from flask import send_file
 
 import redis
 
+import upnpclient
+
 log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO').upper(), None)
 
 logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
@@ -197,7 +199,7 @@ def poll_currentsong():
     content = mpd_client.currentsong()
     content.update(mpd_client.status())
     mpd_client.disconnect()
-
+    content['players'] = get_active_players()
 
     return jsonify(process_currentsong(content))
 
@@ -206,6 +208,12 @@ def kodi():
     server = request.args.get('server', app.config.get('KODI', 'localhost'))
     if server == "" or server == "undefined":
         server = app.config.get('KODI', 'localhost')
+
+    server = server.replace('http://','')
+    m = re.search('^([^\/\:]*)',  server)
+    if m:
+        server = m.group(1)
+
     url = 'http://{}:8080/jsonrpc'.format(server)
     app.logger.debug("kodi called {} {}".format(url, json.dumps(request.args)))
     proxies = {}
@@ -233,6 +241,27 @@ def kodi():
     r = requests.post(url, headers={'Content-type': 'application/json'}, verify=False, proxies=proxies, json=kodi_data)
     app.logger.debug("subscribe request returned {} {}".format(r.status_code, r.text))
     return r.text
+
+@app.route('/upnp', methods=['GET', 'POST'])
+def upnp():
+    server = request.args.get('server')
+    if server == "" or server == "undefined":
+        return jsonify({'result': 'no server given'})
+    try:
+        d = upnpclient.Device(server)
+        if request.args.get('action', 'Player.Stop') == 'Player.Open':
+            d.AVTransport.SetAVTransportURI(InstanceID='0', CurrentURI=request.args.get('stream', 'http://localhost:18080'),CurrentURIMetaData='Audioloader')
+            d.AVTransport.Play(InstanceID='0', Speed='1')
+        else:
+            d.AVTransport.Stop(InstanceID='0')
+
+    except Exception as e:
+        app.logger.warn('couldnot run upnp commands')
+        app.logger.debug(traceback.format_exc())
+        return jsonify({'result': 'load failed'})
+
+    return jsonify({'result': 'loaded'})
+
 
 @app.route('/generate_randomset', methods=['GET', 'POST'])
 def generate_randomset():
@@ -333,7 +362,39 @@ def favourites():
     return jsonify({'result': 'ok'})
 
 
+def get_active_players():
+    players = []
 
+    try:
+        r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+        for key in r.scan_iter("upnp:player:*:last_seen"):
+            last_seen = float(r.get(key))
+            #app.logger.debug("last seen vs now "+ key + "   " + str(last_seen) + '   ' + str(time.time()) + "   " +  str(time.time() - last_seen) )
+            if time.time() - last_seen < 600:
+                data = json.loads(r.get(key.replace('last_seen','data')))
+                players.append(data)
+
+    except Exception as e:
+        app.logger.debug('getting cover from redis nok' + str(e))
+        app.logger.debug(traceback.format_exc())
+    finally:
+        del(r)
+
+    if len(players) == 0 and 'KODI' in app.config:
+        players.append({
+            'ip': app.config['KODI'],
+            'model_name': 'Kodi',
+            'name': 'Kodi player'
+        })
+
+    return players
+
+
+
+@app.route('/active_players', methods=['GET', 'POST'])
+def active_players():
+    players = get_active_players()
+    return jsonify(players)
 
 @app.route('/history', methods=['GET', 'POST'])
 @app.route('/randomset', methods=['GET', 'POST'])
@@ -517,6 +578,7 @@ def mpd_proxy():
         elif(request.path == '/currentsong'):
             content = mpd_client.currentsong()
             content.update(mpd_client.status())
+            content['players'] = get_active_players()
             content = process_currentsong(content)
         mpd_client.disconnect()
 
