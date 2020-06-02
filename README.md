@@ -28,7 +28,7 @@ I detail here how to install the application on Debian/Ubuntu derivatives, but y
 1. Install base packages
 
 ```bash
-sudo apt install redis-server redis-tools git uwsgi-plugin-python3 python3 python3-pip python3-virtualenv`
+sudo apt install redis-server redis-tools git uwsgi-plugin-python3 python3 python3-pip python3-virtualenv python-virtualenv
 ```
 
 Redis is used to cache the name of folder images. It slightly improves performace, but nothing serious happens if you don't install it.
@@ -36,7 +36,7 @@ Redis is used to cache the name of folder images. It slightly improves performac
 2. Download
 
 ```bash
-git clone https://github.com/kriseknet/audioloader.git`
+git clone https://github.com/krisek/audioloader.git
 ```
 
 3. Prepare environment
@@ -49,8 +49,8 @@ cd venv
 git clone https://github.com/Mic92/python-mpd2.git
 cd python-mpd2
 python setup.py install
-cd ..
-pip install -r < requirements.txt
+cd ../../
+pip install -r requirements.txt
 cp app.ini.tpl app.ini
 ```
 
