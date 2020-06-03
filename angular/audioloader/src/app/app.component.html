@@ -80,11 +80,11 @@
   <div class="collapse navbar-collapse"
        [ngClass]="{ 'show': isMenuOpen }">
     <form class="form-inline my-2 my-lg-0 ml-auto">
-    <span *ngIf="! streamplayers" >
-    <a href="#" (click)="openStream(0)" class="nav-item nav-link" *ngIf="currentsong['active']"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream to kodi"  [@loadingTrigger]="loading['kodiload'] ? 'loading' : 'normal'">queue_music</mat-icon></a>
 
-    <a href="#" (click)="stopStream(0)" class="nav-item nav-link" *ngIf="currentsong['active']"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop stream on kodi"  [@loadingTrigger]="loading['kodistop'] ? 'loading' : 'normal'">remove_from_queue</mat-icon></a>
-    </span>
+    <a href="#" (click)="openStream(0)" class="nav-item nav-link" *ngIf="currentsong['active'] && ! streamplayers"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream to kodi"  [@loadingTrigger]="loading['kodiload'] ? 'loading' : 'normal'">queue_music</mat-icon></a>
+
+    <a href="#" (click)="stopStream(0)" class="nav-item nav-link" *ngIf="currentsong['active']  && ! streamplayers"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop stream on kodi"  [@loadingTrigger]="loading['kodistop'] ? 'loading' : 'normal'">remove_from_queue</mat-icon></a>
+
       <div ngbDropdown class="nav-item" *ngIf="streamplayers && currentsong['active']">
         <a href="#" (click)="false" class="nav-link" ngbDropdownToggle><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream">queue_music</mat-icon></a>
         <div ngbDropdownMenu>
