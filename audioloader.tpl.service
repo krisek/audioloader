@@ -5,12 +5,11 @@ Description="uWSGI server instance for audioloader"
 After=network.target
 
 [Service]
-User=kris
-Group=kris
+User={{username}}
+Group={{groupname}}
 ;WorkingDirectory=/var/www/audioloader
 ;Environment=FLASK_ENV=
 ExecStart=/var/www/audioloader/start-uwsgi.sh
 
 [Install]
 WantedBy=multi-user.target
-
