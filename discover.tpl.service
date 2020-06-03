@@ -1,0 +1,17 @@
+;sudo systemctl edit --force --full upnp-discover.service
+
+[Unit]
+Description="upnp discover service for audioloader"
+After=network.target
+
+[Service]
+User={{username}}
+Group={{username}}
+;WorkingDirectory=/var/www/audioloader
+;Environment=FLASK_ENV=
+ExecStart=/var/www/audioloader/venv/bin/python3 /var/www/audioloader/discover.py
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
