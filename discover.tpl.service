@@ -9,7 +9,7 @@ User={{username}}
 Group={{username}}
 ;WorkingDirectory=/var/www/audioloader
 ;Environment=FLASK_ENV=
-ExecStart=/var/www/audioloader/venv/bin/python3 /var/www/audioloader/discover.py
+ExecStart=/var/www/audioloader/venv/bin/python3 /var/www/audioloader/discover.py -m 192.168.1.10 -n 192.168.1.0/24
 Restart=on-failure
 RestartSec=5s
 
