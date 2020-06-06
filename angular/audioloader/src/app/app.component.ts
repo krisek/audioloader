@@ -226,8 +226,9 @@ export class AppComponent {
 
   };
 
-  updateCurrentSong(){
-    this.loading['currentsong'] = true;
+  updateCurrentSong(feedback = false){
+
+    if(feedback) this.loading['currentsong'] = true;
 
     this.http.get<any>(this.servicesBasePath + '/currentsong?mpd_port=' + this.settings['mpd_port']).subscribe(data => {
       //console.log(data);
@@ -437,6 +438,7 @@ export class AppComponent {
       console.log("returned " + command);
       this.loading[command] = false;
       })
+    this.updateCurrentSong();
 
 
   };
