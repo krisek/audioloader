@@ -28,10 +28,7 @@ for opt, arg in opts:
     elif opt in ("-m", "--local-ip"):
         local_ip = arg
     elif opt in ("-n", "--local-net"):
-        löcal_net = arg
-
-local_net = ipaddress.ip_network('192.168.1.0/24')
-me = '192.168.1.185'
+        local_net = arg
 
 msg = \
     'M-SEARCH * HTTP/1.1\r\n' \
@@ -95,9 +92,7 @@ def get_key_by_ip(ip, D):
                 return id
     return ""
 
-"""
-d = upnpclient.Device("http://192.168.1.1:5000/rootDesc.xml")
-"""
+
 players, others = discover_players()
 #print(players)
 #print(others)
@@ -154,7 +149,7 @@ while True:
     else:
         print('received %s bytes from unkown %s' % (len(data), address))
         ip = ipaddress.ip_network(address[0])
-        if ip.subnet_of(local_net) and str(address[0]) != me and time.time()-last_discovered > 120:
+        if ip.subnet_of(local_net) and str(address[0]) != local_ip and time.time()-last_discovered > 120:
             print('going to discover')
             players, others = discover_players()
             last_discovered = time.time()
