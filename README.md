@@ -106,6 +106,9 @@ If you want to enable UPnP discovery, start the `disover.py` script as well, it 
 
 No responsibility on my side for any damage. The application is intended to be used in friendly or appropriately protected network environment.
 
+# Upgrade
+
+Audioloader is distributed in this Git repository. New features are developed against branches, thus you can rely on the master HEAD until further notice. Do regular pulls against it, so that you get the latest bugfixes and the new features implemented.
 
 # Use
 
