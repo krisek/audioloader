@@ -279,6 +279,7 @@ def generate_randomset():
         albums = mpd_client.list('album')
         filter = request.args.get('set_filter', app.config.get('SET_FILTER', ''))
         i = 0
+        artists = {}
         while len(client_data['randomset']) < 12 :
             randomset = choices(albums, k=12)
             i = i + 1
@@ -288,15 +289,20 @@ def generate_randomset():
             for album in randomset:
                 try:
                     album_data = mpd_client.search('album', album['album'])
-                    if filter == '':
-                        client_data['randomset'].append(os.path.dirname(album_data[0]['file']))
-                    else:
-                        if not re.search(app.config['SET_FILTER'], album_data[0]['file']):
+                    artist = album_data[0]['artist']
+                    if artist not in artists:
+                        if filter == '':
                             client_data['randomset'].append(os.path.dirname(album_data[0]['file']))
+                            artists[artist] = True
+                        else:
+                            if not re.search(app.config['SET_FILTER'], album_data[0]['file']):
+                                client_data['randomset'].append(os.path.dirname(album_data[0]['file']))
+                                artists[artist] = True
 
                 except Exception as e:
                     app.logger.debug("failed to add album to randomset " + album['album'] + " error:" + str(e))
 
+            #eliminate duplicate albums -- why choices don't work propery...
             client_data['randomset'] = list(set(client_data['randomset']))[0:12]
 
         mpd_client.disconnect()
