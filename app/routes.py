@@ -373,7 +373,10 @@ def get_active_players():
             if time.time() - last_seen < 600:
                 data = json.loads(r.get(key.replace('last_seen','data')))
                 players.append(data)
-
+            #if have already all players read let's do some housekeeping here
+            if time.time() - last_seen > 1800:
+                r.delete(key.replace('last_seen','data'))
+                r.delete(key)
     except Exception as e:
         app.logger.debug('getting cover from redis nok' + str(e))
         app.logger.debug(traceback.format_exc())
