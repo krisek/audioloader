@@ -108,7 +108,7 @@ No responsibility on my side for any damage. The application is intended to be u
 
 # Upgrade
 
-Audioloader is distributed in this Git repository. New features are developed against branches, thus you can rely on the master HEAD until further notice. Do regular pulls against it, so that you get the latest bugfixes and the new features implemented.
+Audioloader is distributed in this Git repository. New features are developed against branches, thus you can rely on the master HEAD until further notice. Do regular pulls against it (`git pull https://github.com/krisek/audioloader.git && pip install -r requirements.txt`), so that you get the latest bugfixes and the new features implemented.
 
 # Use
 

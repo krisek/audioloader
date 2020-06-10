@@ -35,8 +35,10 @@ server {
         access_log /var/log/nginx/access.log combined if=$loggable;
 
         location / {
-                include uwsgi_params;
-                uwsgi_pass unix:/var/www/audioloader/audioloader.sock;
+                #include uwsgi_params;
+                #uwsgi_pass unix:/var/www/audioloader/audioloader.sock;
+                proxy_pass http://localhost:3400/;
+                proxy_set_header X-Forwarded-For $remote_addr;
                 }
 
 
