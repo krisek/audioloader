@@ -34,6 +34,8 @@ import redis
 
 import upnpclient
 
+import pyradios
+
 log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO').upper(), None)
 
 logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
@@ -429,20 +431,29 @@ def data():
         #first try to find dir in client_history
         for directory in client_data[data]:
             count = {}
-            if directory != '/':
+            tree_data = {}
+            if directory != '/' and not re.search(r'^http:', directory):
                 try:
                     count = mpd_client.count('base', directory)
                     count['playhours'] = re.sub(r'^0:', '', str(datetime.timedelta(seconds=int(count['playtime']))))
                 except Exception as e:
                     app.logger.warn('couldnot get count for  '+ directory + "  " + str(e))
                     app.logger.debug(traceback.format_exc())
+                tree_data = {
+                    'directory': directory,
+                    'count': count
+                    }
 
-            client_data_tree['tree'].append({
-                'directory': directory,
-                'count': count
+            elif re.search(r'^http:', directory):
+                #TODO... find a way to map the stream to the name of the radio... Redis
+                tree_data = {
+                    'directory': directory,
+                    'count': None,
+                    'stream': directory
+                    }
 
-                }
-            )
+
+            client_data_tree['tree'].append(tree_data)
         mpd_client.disconnect()
         client_data_tree['tree'] = list(reversed(client_data_tree['tree']))
     except Exception as e:
@@ -450,6 +461,26 @@ def data():
         app.logger.debug(traceback.format_exc())
     return jsonify(client_data_tree)
 
+@app.route('/search_radio', methods=['GET', 'POST'])
+def search_radio():
+    content = {}
+    content['tree'] = []
+    pattern = request.args.get('pattern', 'ugar')
+    if len(pattern) < 3:
+        return jsonify(content)
+
+    try:
+        rb = pyradios.RadioBrowser()
+
+        content['tree'] = rb.search(name=pattern, name_exact=False)
+
+        content['tree'] = list(filter(lambda elem: elem['name'] != '' and elem['bitrate'] > 60, content['tree']))
+
+    except Exception as e:
+        app.logger.warn('exception on search_radio ' + str(e))
+        app.logger.debug(traceback.format_exc())
+
+    return jsonify(content)
 
 
 
@@ -538,30 +569,41 @@ def mpd_proxy():
             content['name'] = request.args.get('directory', '')
         elif(request.path == '/addplay'):
             mpd_client.consume(1)
+            #if no directory present let's take radio_uuid and then url
+            playable = request.args.get('directory', request.args.get('url'))
+            #if 'stationuuid' in request['args'] and playable == request.args.get('radio_uuid'):
+                #do resolve radio url
+            #    playable = 'signal.mp3'
+
             try:
-                mpd_client.add('signal.mp3')
+                if('directory' in request['args']):
+                    mpd_client.add('signal.mp3')
             except Exception as e:
                 app.logger.info('signal.mp3 was not queued, music will start immediately')
                 app.logger.debug(traceback.format_exc())
-            directory = request.args.get('directory', '.')
-            content = mpd_client.add(directory)
+
+
+
+            content = mpd_client.add(playable)
             content = mpd_client.play()
-            #manage history
-            client_id = request.args.get('client_id', '')
-            client_history = read_data(client_id)
 
-            #first try to find dir in client_history
-            if directory in client_history['history']:
-                client_history['history'].remove(directory)
-            client_history['history'].append(directory)
-            client_history['history'] = client_history['history'][-10:]
+            if('directory' in request['args']):
+                #manage history
+                client_id = request.args.get('client_id', '')
+                client_history = read_data(client_id)
 
-            client_history_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.history.json')
+                #first try to find dir in client_history
+                if playable in client_history['history']:
+                    client_history['history'].remove(playable)
+                client_history['history'].append(playable)
+                client_history['history'] = client_history['history'][-10:]
 
-            if client_id != '' and client_history_file.startswith(app.config['CLIENT_DB']) and re.search(r'[^A-Za-z0-9_\-\.]', client_history_file):
-                #write back the file
-                with open(client_history_file, 'w') as ch:
-                    ch.write(json.dumps(client_history))
+                client_history_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.history.json')
+
+                if client_id != '' and client_history_file.startswith(app.config['CLIENT_DB']) and re.search(r'[^A-Za-z0-9_\-\.]', client_history_file):
+                    #write back the file
+                    with open(client_history_file, 'w') as ch:
+                        ch.write(json.dumps(client_history))
 
 
         elif(request.path == '/play'):

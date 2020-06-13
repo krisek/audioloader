@@ -104,6 +104,10 @@ export class AppComponent {
   pollMinDelta = 20000
   lastPolledStarted = -1 * this.pollMinDelta;
 
+  radio = false;
+  dirbrowser = false;
+
+  stations = [];
 
     @HostListener('window:focus', ['$event'])
     onFocus(event: FocusEvent): void {
@@ -364,6 +368,8 @@ export class AppComponent {
 
   showDash(){
     this.dash = true;
+    this.radio = false;
+    this.dirbrowser = false;
     console.log('show Dash called');
 
 
@@ -374,18 +380,28 @@ export class AppComponent {
       this.updateSpec(spec);
     }
 
+  };
 
+  showRadio(){
+    this.radio = true;
+    this.dash = false;
+    this.dirbrowser = false;
 
   };
+
+
 
   showDir(dir){
     console.log("showDir: " + dir);
     this.dash = false;
+    this.radio = false;
+    this.dirbrowser = true;
     this.tree_dir = {};
     this.tree_file = {};
     this.list_dir = new Array();
     this.list_dir_alpha = {};
     this.list_alpha = [];
+
     this.http.get<any>(this.servicesBasePath + '/ls?mpd_port=' + this.settings['mpd_port'] + '&directory=' + encodeURIComponent(dir)).subscribe(data => {
       //console.log(data);
       this.displayTree(data);
@@ -396,31 +412,52 @@ export class AppComponent {
   };
 
   searchItem(lookfor){
-    if(lookfor.length < 4) return;
+    if(lookfor.length < 3) return;
     console.log("searchItem " + lookfor);
-    this.dash = false;
-    this.active_area = "browser";
-    this.http.get<any>(this.servicesBasePath + '/search?mpd_port=' + this.settings['mpd_port'] + '&pattern=' + encodeURIComponent(lookfor)).subscribe(data => {
-      console.log(data);
-      this.displayTree(data);
-    })
-    this.last_directory = '.';
-    if(typeof(localStorage.last_directory) != "undefined"){
-      this.last_directory = localStorage.last_directory;
+
+    if(!this.radio){
+      this.dash = false;
+      this.active_area = "browser";
+      this.http.get<any>(this.servicesBasePath + '/search?mpd_port=' + this.settings['mpd_port'] + '&pattern=' + encodeURIComponent(lookfor)).subscribe(data => {
+        console.log(data);
+        this.displayTree(data);
+      })
+      this.last_directory = '.';
+      if(typeof(localStorage.last_directory) != "undefined"){
+        this.last_directory = localStorage.last_directory;
+      }
+      this.updateDir(this.last_directory);
+
     }
-    this.updateDir(this.last_directory);
+    else{
+      this.http.get<any>(this.servicesBasePath + '/search_radio?mpd_port=' + this.settings['mpd_port'] + '&pattern=' + encodeURIComponent(lookfor)).subscribe(data => {
+        console.log(data);
+        this.stations = data.tree;
+      })
+    }
+
   }
 
 
 
   addDir(addObject){
     console.log("addDir: " + addObject['dir']);
+    var playparams;
+
+    if('url' in addObject && addObject['url'] != ''){
+      playparams = 'url=' + addObject['url'] + '&name=' + addObject['name'] + '&stationuuid=' + addObject['stationuuid'] + '&favicon=' + addObject['favicon'];
+    }
+    else{
+      playparams = 'directory=' + encodeURIComponent(addObject['dir']);
+    }
 
 
-    this.http.get<any>(this.servicesBasePath + '/addplay?mpd_port=' + this.settings['mpd_port'] + '&directory=' + encodeURIComponent(addObject['dir']) + '&client_id=' + this.settings['client_id']  ).subscribe(data => {
+
+    this.http.get<any>(this.servicesBasePath + '/addplay?mpd_port=' + this.settings['mpd_port'] + '&'+ playparams + '&client_id=' + this.settings['client_id']  ).subscribe(data => {
       console.log("enqueued dir ");
       this.showSuccess('loaded ' + this.truncate(this.baseName(addObject['dir']), 10))
-      this.updateSpec('history');
+
+      if(addObject['url'] == '') this.updateSpec('history');
 
       this.updateCurrentSong();
       for(let i = 0; i < addObject['load'].length; i++){
@@ -540,12 +577,36 @@ export class AppComponent {
 
   }
 
+  openRadioModal(name, stationuuid, url, favicon){
+    const modalRef = this.modalService.open(PopupComponent);
+    modalRef.componentInstance.name = name;
+    modalRef.componentInstance.encoded = encodeURIComponent(name);
+    modalRef.componentInstance.servicesBasePath = this.servicesBasePath;
+    modalRef.componentInstance.players = this.currentsong.players;
+    modalRef.componentInstance.stationuuid = stationuuid;
+    modalRef.componentInstance.url = url;
+    modalRef.componentInstance.favicon = favicon;
+    modalRef.componentInstance.messageEvent.subscribe((receivedEntry) => {
+      console.log("openModal returned: " + receivedEntry['dir'] + " " + receivedEntry['load'].join(','));
+      this.addDir(receivedEntry);
+    })
+
+
+
+  }
+
+
+
+
   openModal(dir) {
     const modalRef = this.modalService.open(PopupComponent);
     modalRef.componentInstance.name = dir;
     modalRef.componentInstance.encoded = encodeURIComponent(dir);
     modalRef.componentInstance.servicesBasePath = this.servicesBasePath;
     modalRef.componentInstance.players = this.currentsong.players;
+    modalRef.componentInstance.stationuuid = "";
+    modalRef.componentInstance.url = "";
+    modalRef.componentInstance.favicon = "";
     modalRef.componentInstance.messageEvent.subscribe((receivedEntry) => {
       console.log("openModal returned: " + receivedEntry['dir'] + " " + receivedEntry['load'].join(','));
       this.addDir(receivedEntry);

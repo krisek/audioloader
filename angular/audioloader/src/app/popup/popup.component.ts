@@ -17,6 +17,10 @@ export class PopupComponent {
   @Input() stream;
   @Input() target;
   @Input() players;
+  @Input() stationuuid;
+  @Input() favicon;
+  @Input() url;
+
 
   @Output() messageEvent = new EventEmitter<object>();
 
@@ -54,7 +58,7 @@ export class PopupComponent {
       }
     }
     console.log('emit ' + dir + ' enqueue ' + load.join(',') );
-    this.messageEvent.emit({'dir': dir, 'load': load});
+    this.messageEvent.emit({'dir': dir, 'load': load, 'url': this.url, 'stationuuid': this.stationuuid});
    };
 
 }

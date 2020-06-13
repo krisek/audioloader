@@ -67,6 +67,8 @@
 <div class="container flex-parent">
     <a href="#" class="navbar-brand" (click)="showDir(dir)"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="folders" >folder_open</mat-icon></a>
     <a href="#" class="navbar-brand" (click)="showDash()"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="dashboard" >dashboard</mat-icon></a>
+    <a href="#" class="navbar-brand" (click)="showRadio()"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="radio" >hvac</mat-icon></a>
+
     <div class="navbar-brand flex-child long-and-truncated" ng-class="{'long': (currentsong['title_short'].length > 15), 'verylong': (currentsong['title_short'].length > 25)}"   [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong(true)"><div class="long-and-truncated" style="font-size: 1rem; line-height:1.2rem;">{{ currentsong['display_title_top'] }}</div><div  class="long-and-truncated"  style="font-size: 1.1rem;">{{ currentsong['title_short'] }}</div>
     <ngb-progressbar *ngIf="currentsong['active']" [value]="currentsong['elapsed']" [max]="currentsong['duration']"></ngb-progressbar>
 
@@ -108,8 +110,7 @@
 
     <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('next')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="next"  [@loadingTrigger]="loading['next'] ? 'loading' : 'normal'">fast_forward</mat-icon></a>
 
-
-        <input class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="search..." name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target.value; searchItem($event.target.value)" onfocus="this.select();" onmouseup="return false;">
+        <input class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="{{ radio ?  'search station...' : 'search...'}}" name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target.value; searchItem($event.target.value)" onfocus="this.select();" onmouseup="return false;">
 
         <a href="#" class="nav-item nav-link"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="settings" (click)="openSettings()">settings</mat-icon></a>
     </form>
@@ -123,7 +124,7 @@
   <div class="container">
     <div class="row">
       <div class="col-sm-12" >
-        <ng-container *ngIf="!dash">
+        <ng-container *ngIf="dirbrowser">
         <span *ngFor="let elem of path">/<a href="#" class="albumlink" (click)="showDir(elem.dir)">{{ elem.name }}</a></span>&nbsp;&nbsp;
             <a href="#" class="togglestar albumlink" (click)="toggleFavourite(dir)"><mat-icon aria-hidden="false" aria-label="fav" *ngIf="favourite" class="dash-icon togglestar-icon">favorite</mat-icon><mat-icon aria-hidden="false" aria-label="fav" *ngIf="!favourite" class="dash-icon togglestar-icon">favorite_border</mat-icon></a>
         <a href="#" class="play" (click)="openModal(dir)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon></a>
@@ -197,7 +198,12 @@
 
           </div>
         </ng-container>
+        <ng-container *ngIf="radio">
+            <span *ngFor="let elem of stations">
+              <a href="#" class="play" (click)="openRadioModal(elem.name, elem.stationuuid, elem.url, elem.favicon)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon></a>{{ elem.name }} ({{ elem.bitrate }}kbps) {{ elem.country }}<br>
+            </span>
 
+        </ng-container>
       </div>
     </div>
   </div>

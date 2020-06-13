@@ -27,3 +27,4 @@ Werkzeug==1.0.0
 WTForms==2.2.1
 nested-lookup
 upnpclient
+pyradios
