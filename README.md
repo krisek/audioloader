@@ -146,7 +146,7 @@ If you mark a folder as favorite it will be listed in the bottom of the dash. Yo
 
 ## UPnP
 
-UPnP media renderers available on the network are monitored by the `discover.py`. It listens the traffic in the UPnP multicast group and if a new device appears, the script registers the device's capabilities and updates its availability. Audioloader offers rendering on devices which have been seen on the network in the last ten minutes. Consequently if you turn off a device it won't immediately disappear from Audioloader. When you turn on UPnP devices it might take some time until `discover` finds it depending on how chatty the device is on UPnP. (In order not to miss anything, discover initiates full discovery as well regularly.)
+UPnP media renderers available on the network are monitored by the `discover.py` daemon. This application listens to the traffic in the UPnP multicast group and if a new device appears, it registers the device's capabilities. Audioloader offers rendering on devices which have been seen on the network in the last 10 minutes. (Consequently, if you turn off a device it won't immediately disappear from Audioloader.) When you turn on a UPnP device it might take some time until `discover.py` finds it, depending on how chatty the device is on UPnP. (In order not to miss anything, `discover.py` initiates full UPnP discovery regularly.)
 
 ### Kodi & UPnP
 
@@ -156,7 +156,6 @@ If UPnP discovery is enabled you need to turn on UPnP on Kodi as well, otherwise
 
 - (Better) playlist management
 - At the moment the application plays in consume mode, ie. there no rewind option
-
 
 # About
 The application was created by Kristof Imre Szabo.
