@@ -471,10 +471,10 @@ def search_radio():
 
     try:
         rb = pyradios.RadioBrowser()
-
+        app.logger.debug('searching for radio: ' + pattern)
         content['tree'] = rb.search(name=pattern, name_exact=False)
 
-        content['tree'] = list(filter(lambda elem: elem['name'] != '' and elem['bitrate'] > 60, content['tree']))
+        content['tree'] = list(filter(lambda elem: elem['name'] != '' and (elem['bitrate'] > 60 or elem['bitrate'] == 0), content['tree']))
 
     except Exception as e:
         app.logger.warn('exception on search_radio ' + str(e))
