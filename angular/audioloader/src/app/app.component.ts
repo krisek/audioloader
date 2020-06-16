@@ -108,6 +108,7 @@ export class AppComponent {
   dirbrowser = false;
 
   stations = [];
+  radio_history = {};
 
     @HostListener('window:focus', ['$event'])
     onFocus(event: FocusEvent): void {
@@ -355,6 +356,20 @@ export class AppComponent {
 
   }
 
+  updateRadioHistory(){
+    //this.radio_history = {}
+    this.http.get<any>(this.servicesBasePath + '/radio_history?mpd_port=' + this.settings['mpd_port'] + '&client_id=' + this.settings['client_id']).subscribe(data => {
+        console.log('got radio history');
+        console.log(data);
+        this.radio_history = data;
+        }
+      )
+
+
+  }
+
+
+
   newSet(){
     this.showSuccess('requesting new set');
     this.http.get<any>(this.servicesBasePath + '/generate_randomset?mpd_port=' + this.settings['mpd_port'] + '&client_id=' + this.settings['client_id']).subscribe(data => {
@@ -386,6 +401,7 @@ export class AppComponent {
     this.radio = true;
     this.dash = false;
     this.dirbrowser = false;
+    this.updateRadioHistory();
 
   };
 
@@ -420,6 +436,7 @@ export class AppComponent {
       this.active_area = "browser";
       this.http.get<any>(this.servicesBasePath + '/search?mpd_port=' + this.settings['mpd_port'] + '&pattern=' + encodeURIComponent(lookfor)).subscribe(data => {
         console.log(data);
+        this.dirbrowser = true;
         this.displayTree(data);
       })
       this.last_directory = '.';
@@ -445,7 +462,7 @@ export class AppComponent {
     var playparams;
 
     if('url' in addObject && addObject['url'] != ''){
-      playparams = 'url=' + addObject['url'] + '&name=' + addObject['name'] + '&stationuuid=' + addObject['stationuuid'] + '&favicon=' + addObject['favicon'];
+      playparams = 'url=' + addObject['url'] + '&name=' + addObject['dir'] + '&stationuuid=' + addObject['stationuuid'] + '&favicon=' + addObject['favicon'];
     }
     else{
       playparams = 'directory=' + encodeURIComponent(addObject['dir']);
@@ -457,7 +474,7 @@ export class AppComponent {
       console.log("enqueued dir ");
       this.showSuccess('loaded ' + this.truncate(this.baseName(addObject['dir']), 10))
 
-      if(addObject['url'] == '') this.updateSpec('history');
+      if(addObject['url'] == '') this.updateSpec('history'); else this.updateRadioHistory();
 
       this.updateCurrentSong();
       for(let i = 0; i < addObject['load'].length; i++){
@@ -587,7 +604,8 @@ export class AppComponent {
     modalRef.componentInstance.url = url;
     modalRef.componentInstance.favicon = favicon;
     modalRef.componentInstance.messageEvent.subscribe((receivedEntry) => {
-      console.log("openModal returned: " + receivedEntry['dir'] + " " + receivedEntry['load'].join(','));
+      console.log("openRadioModal returned");
+      console.log(receivedEntry);
       this.addDir(receivedEntry);
     })
 

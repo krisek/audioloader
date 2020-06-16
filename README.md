@@ -15,6 +15,7 @@ The application features five ways of selecting music from MPD:
 1. creating a random set of folders to choose music from (useful for large music libraries)
 1. selecting folders from the history
 1. marking folders as favorite
+1. select radio station from the [radio-browser.info](http://radio-browser.info) community radio database
 
 
 The Flask application runs on the same system where you run MPD. You can configure any supported output method on MPD; a very common use case is to install the application on a Raspberry Pi (or home server), configure MPD with HTTP stream output, so that you can stream music from all of your devices.
@@ -114,9 +115,8 @@ Audioloader is distributed in this Git repository. New features are developed ag
 
 If you run the application with standalone uWSGI, you just need to visit http://localhost:5000 after starting it.
 
-
 ## Navigation bar
-The first icon on the left side opens the directory view. The second opens the dash (which is the default view). In the middle you see the title of the currently playing song and the various media controls (if there's anything playing). On the left side you see a search bar: it needs minimum four characters to start searching.
+The first icon on the left side opens the directory view. The second opens the dash (which is the default view). The third one opens the radio stations view. In the middle you see the title of the currently playing song and the various media controls (if there's anything playing). On the left side you see a search bar: it needs minimum four characters to start searching.
 
 ### Settings
 The gear button opens the settings dialog.
@@ -143,6 +143,8 @@ Having random directories presented is an important feature, if you have a large
 On the right hand side you find your listening history; the last 10 loaded directories are saved.
 
 If you mark a folder as favorite it will be listed in the bottom of the dash. You can have as many favorites as you want.
+
+The radio station view let's you search and load radio stations for the [radio-browser.info](http://radio-browser.info) community radio database. The last 10 started station is displayed in the radio station history.
 
 ## UPnP
 

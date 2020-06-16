@@ -407,6 +407,12 @@ def active_players():
     players = get_active_players()
     return jsonify(players)
 
+
+@app.route('/radio_history', methods=['GET', 'POST'])
+def radio_history():
+    client_data = read_data(request.args.get('client_id', ''), 'radio_history')
+    return jsonify(client_data)
+
 @app.route('/history', methods=['GET', 'POST'])
 @app.route('/randomset', methods=['GET', 'POST'])
 @app.route('/favourites', methods=['GET', 'POST'])
@@ -570,13 +576,14 @@ def mpd_proxy():
         elif(request.path == '/addplay'):
             mpd_client.consume(1)
             #if no directory present let's take radio_uuid and then url
-            playable = request.args.get('directory', request.args.get('url'))
-            #if 'stationuuid' in request['args'] and playable == request.args.get('radio_uuid'):
+            playable = request.args.get('directory', request.args.get('url', ''))
+            if request.args.get('stationuud', '') != '' and playable == '':
                 #do resolve radio url
-            #    playable = 'signal.mp3'
-
+                rb = pyradios.RadioBrowser()
+                station = rb.station_by_uuid(request['args']['stationuuid'])
+                playable = station['url']
             try:
-                if('directory' in request['args']):
+                if(request.args.get('directory', '') != ''):
                     mpd_client.add('signal.mp3')
             except Exception as e:
                 app.logger.info('signal.mp3 was not queued, music will start immediately')
@@ -587,18 +594,44 @@ def mpd_proxy():
             content = mpd_client.add(playable)
             content = mpd_client.play()
 
-            if('directory' in request['args']):
+            client_id = request.args.get('client_id', '')
+
+            if(request.args.get('directory', '') != ''):
                 #manage history
-                client_id = request.args.get('client_id', '')
                 client_history = read_data(client_id)
 
                 #first try to find dir in client_history
                 if playable in client_history['history']:
+
                     client_history['history'].remove(playable)
                 client_history['history'].append(playable)
                 client_history['history'] = client_history['history'][-10:]
 
                 client_history_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.history.json')
+
+                if client_id != '' and client_history_file.startswith(app.config['CLIENT_DB']) and re.search(r'[^A-Za-z0-9_\-\.]', client_history_file):
+                    #write back the file
+                    with open(client_history_file, 'w') as ch:
+                        ch.write(json.dumps(client_history))
+            if(re.search(r'^https{0,1}://', playable) and request.args.get('stationuuid', '') != ''):
+                #manage radiohistory
+                stationuuid = request.args['stationuuid']
+                client_history = read_data(client_id, 'radio_history')
+                if 'stations' not in client_history:
+                    client_history['stations'] = {}
+
+                if stationuuid in client_history['radio_history']:
+                    client_history['radio_history'].remove(stationuuid)
+                client_history['radio_history'].append(stationuuid)
+                client_history['radio_history'] = client_history['radio_history'][-10:]
+
+                client_history['stations'][stationuuid] = {
+                    'url': playable,
+                    'stationuuid': stationuuid,
+                    'name': request.args.get('name', ''),
+                    'favicon': request.args.get('favicon', '')
+                }
+                client_history_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.radio_history.json')
 
                 if client_id != '' and client_history_file.startswith(app.config['CLIENT_DB']) and re.search(r'[^A-Za-z0-9_\-\.]', client_history_file):
                     #write back the file

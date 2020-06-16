@@ -199,9 +199,36 @@
           </div>
         </ng-container>
         <ng-container *ngIf="radio">
-            <span *ngFor="let elem of stations">
-              <a href="#" class="play" (click)="openRadioModal(elem.name, elem.stationuuid, elem.url, elem.favicon)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon></a>{{ elem.name }} ({{ elem.bitrate }}kbps) {{ elem.country }}<br>
-            </span>
+
+            <div class="album-cover inline-block" *ngFor="let elem of radio_history['radio_history']" >
+              <div class="outer_shadow">
+                <div class="album-cover-frame">
+                  <img src="{{ radio_history['stations'][elem]['favicon'] }}" title="{{ radio_history['stations'][elem]['name'] }}" class="album-cover-img" type="button"  data-toggle="modal" data-target="#exampleModal" (click)="openRadioModal(radio_history['stations'][elem]['name'], radio_history['stations'][elem]['stationuuid'], radio_history['stations'][elem]['url'], radio_history['stations'][elem]['favicon'])" />
+                </div>
+                <div class="album-title">
+                  <span class="albumlink">
+                      <a href="#" class="play" (click)="openRadioModal(radio_history['stations'][elem]['name'], radio_history['stations'][elem]['stationuuid'], radio_history['stations'][elem]['url'], radio_history['stations'][elem]['favicon'])" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon></a> {{ radio_history['stations'][elem]['name'] }}
+                  </span>
+                </div>
+
+              </div>
+            </div>
+
+          <br/>
+
+
+          <hr class="d-none d-sm-block">
+          <div class='d-block d-sm-none hr'><span class='hr-title'>Search result</span></div>
+
+          <span *ngFor="let elem of stations">
+            <a href="#" class="play" (click)="openRadioModal(elem.name, elem.stationuuid, elem.url, elem.favicon)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon></a> {{ elem.name }} ({{ elem.bitrate }}kbps) {{ elem.country }}<br>
+          </span>
+
+
+
+
+
+
 
         </ng-container>
       </div>

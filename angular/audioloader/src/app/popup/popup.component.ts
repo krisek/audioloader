@@ -58,7 +58,7 @@ export class PopupComponent {
       }
     }
     console.log('emit ' + dir + ' enqueue ' + load.join(',') );
-    this.messageEvent.emit({'dir': dir, 'load': load, 'url': this.url, 'stationuuid': this.stationuuid});
+    this.messageEvent.emit({'dir': dir, 'load': load, 'url': this.url, 'stationuuid': this.stationuuid, 'favicon': this.favicon});
    };
 
 }
