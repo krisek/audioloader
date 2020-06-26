@@ -26,9 +26,9 @@ for opt, arg in opts:
         print ('discover.py -m local_ip -n local_net')
         sys.exit()
     elif opt in ("-m", "--local-ip"):
-        local_ip = arg
+        local_ip = ipaddress.ip_network(arg)
     elif opt in ("-n", "--local-net"):
-        local_net = arg
+        local_net = ipaddress.ip_network(arg)
 
 msg = \
     'M-SEARCH * HTTP/1.1\r\n' \
