@@ -32,7 +32,7 @@ I detail here how to install the application on Debian/Ubuntu derivatives, but y
 sudo apt install redis-server redis-tools git uwsgi-plugin-python3 python3 python3-pip python3-virtualenv python-virtualenv
 ```
 
-Redis is used to cache the name of folder images and to keep track of the UPnP devices discovered on the network. It slightly improves performance of showing folder images, but it is not a must to install it the application can work without it -- though, if you want to have UPnP discovery, it is a must to install it.
+Redis is used to cache the name of folder images and to keep track of the UPnP devices discovered on the network. It slightly improves performance of showing folder images, but it is not a must to install it the application can work without it — though, if you want to have UPnP discovery, it is a must to install it.
 
 2. Download
 
@@ -53,7 +53,7 @@ cp app.ini.tpl app.ini
 4. Configure
 
 ```bash
-cp config.tpl.py config.py`
+cp config.tpl.py config.py
 ```
 
 In this file you can edit the configuration of the Flask backend.
@@ -71,7 +71,7 @@ In this file you can edit the configuration of the Flask backend.
   #force client cache for static content
   SEND_FILE_MAX_AGE_DEFAULT = 43200
 
-  #where to store client favorites/history/random folders -- the user running the web application needs to have write access on this directory
+  #where to store client favorites/history/random folders — the user running the web application needs to have write access on this directory
   CLIENT_DB = '/var/lib/audioloader'
 
   LOG_LEVEL = 'info'
@@ -84,7 +84,7 @@ In this file you can edit the configuration of the Flask backend.
 
 uWSGI can run the application directly without any web server needed. This is a viable method if you don't want to expose the application to external networks and you don't have many clients. If uWSGI serves directly the Flask backend, static cover art needs to be served by the backend; you need to set a MUSIC_DIR in the config, which tells the server where to look for cover art. (MPD can give you only a file list, but doesn't serve files: the Flask app figures out the cover art filename from the file list given by MPD, and cover file needs to be read from the filesystem.)
 
-If you want to add https or extra protection to the application, you can install a web server to proxy towards uWSGI. An example Nginx virtual host configuration is included in the repository. If you are willing to expose your music library on this web server, you can configure the application to redirect the client to download cover art -- this might be less resource intensive as serving the files through the Flack app directly. (Your mileage might vary.)
+If you want to add https or extra protection to the application, you can install a web server to proxy towards uWSGI. An example Nginx virtual host configuration is included in the repository. If you are willing to expose your music library on this web server, you can configure the application to redirect the client to download cover art — this might be less resource intensive as serving the files through the Flack app directly. (Your mileage might vary.)
 
 By default you don't have to configure anything else but the directory for your music library and the application will serve cover arts directly.
 
@@ -116,7 +116,7 @@ The first icon on the left side opens the directory view. The second opens the d
 ### Settings
 The gear button opens the settings dialog.
 
-MPD port: this is where you can set what port the Flask application should use to connect to the MPD server. (Tip: if you have a family, you can set up separate MPD server for everybody -- it's not complicated.)
+MPD port: this is where you can set what port the Flask application should use to connect to the MPD server. (Tip: if you have a family, you can set up separate MPD server for everybody — it's not complicated.)
 
 Stream from: If you plan to use Kodi to consume the stream from the MPD server, where this stream is located
 
@@ -152,7 +152,7 @@ If UPnP discovery is enabled you need to turn on UPnP on Kodi as well, otherwise
 # TODO / ISSUES
 
 - (Better) playlist management
-- At the moment the application plays in consume mode, ie. there no rewind option
+- At the moment the application plays in consume mode, ie. there is no rewind option
 
 # About
 The application was created by Kristof Imre Szabo.
