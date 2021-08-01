@@ -46,11 +46,6 @@ git clone https://github.com/krisek/audioloader.git
 cd audioloader
 virtualenv -p python3 venv
 . venv/bin/activate
-cd venv
-git clone https://github.com/Mic92/python-mpd2.git
-cd python-mpd2
-python setup.py install
-cd ../../
 pip install -r requirements.txt
 cp app.ini.tpl app.ini
 ```

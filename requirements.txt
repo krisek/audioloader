@@ -6,7 +6,6 @@ dnspython==1.16.0
 Flask==1.1.1
 Flask-Cors==3.0.8
 Flask-WTF==0.14.3
-greenlet==0.4.15
 idna==2.9
 itsdangerous==1.1.0
 Jinja2==2.11.3
@@ -28,3 +27,4 @@ WTForms==2.2.1
 nested-lookup
 upnpclient
 pyradios
+python-mpd2
