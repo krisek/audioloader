@@ -36,6 +36,8 @@ import upnpclient
 
 import pyradios
 
+import sys
+
 log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO').upper(), None)
 
 logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
@@ -173,11 +175,11 @@ def process_currentsong(currentsong):
     if not currentsong['active']:
         currentsong['title'] = 'not playing'
         currentsong['display_title'] = 'not playing'
-    if currentsong['state'] == 'play':
+    if currentsong.get('state','stop') == 'play':
         currentsong['next_state'] = 'pause'
         currentsong['next_title'] = 'playing ➙ pause'
         currentsong['next_icon'] = 'pause_circle_outline'
-    if currentsong['state'] == 'pause':
+    if currentsong.get('state','stop') == 'pause':
         currentsong['next_state'] = 'play'
         currentsong['next_title'] = 'paused ➙ play'
         currentsong['next_icon'] = 'play_circle_outline'
@@ -192,15 +194,21 @@ def poll_currentsong():
     mpd_client = MPDClient()
 
     mpd_client.timeout = 40000
-    mpd_client.idletimeout = 40000
+    mpd_client.idletimeout = 60 
     mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
-    mpd_client.send_idle()
-    app.logger.debug("waiting for mpd_client")
-    select([mpd_client], [], [], 30)[0]
-    mpd_client.noidle()
-    content = mpd_client.currentsong()
-    content.update(mpd_client.status())
-    mpd_client.disconnect()
+    try:
+        mpd_client.idle()
+        app.logger.debug("waiting for mpd_client")
+        select([mpd_client], [], [], 30)[0]
+        #mpd_client.noidle()
+        content = mpd_client.currentsong()
+        content.update(mpd_client.status())
+        mpd_client.disconnect()
+    except Exception as e:
+        app.logger.debug("mpd_client wait exception {}".format(e.__class__))
+    
+    
+
     content['players'] = get_active_players()
 
     return jsonify(process_currentsong(content))
