@@ -192,23 +192,19 @@ def process_currentsong(currentsong):
 def poll_currentsong():
     content = {}
     mpd_client = MPDClient()
-
-    mpd_client.timeout = 40000
-    mpd_client.idletimeout = 60 
+    mpd_client.idletimeout = 30 
     mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
     try:
-        mpd_client.idle()
-        app.logger.debug("waiting for mpd_client")
-        select([mpd_client], [], [], 30)[0]
-        #mpd_client.noidle()
-        content = mpd_client.currentsong()
-        content.update(mpd_client.status())
-        mpd_client.disconnect()
-    except Exception as e:
-        app.logger.debug("mpd_client wait exception {}".format(e.__class__))
-    
-    
+        mpd_client.idle('playlist', 'player')
+        app.logger.warning("waiting for mpd_client")
 
+    except Exception as e:
+        app.logger.warning("mpd_client wait exception {}".format(e.__class__))
+    
+    mpd_client.disconnect()
+    mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
+    content = mpd_client.currentsong()
+    content.update(mpd_client.status())
     content['players'] = get_active_players()
 
     return jsonify(process_currentsong(content))
