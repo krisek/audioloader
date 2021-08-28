@@ -196,10 +196,10 @@ def poll_currentsong():
     mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
     try:
         mpd_client.idle('playlist', 'player')
-        app.logger.warning("waiting for mpd_client")
+        app.logger.debug("waiting for mpd_client")
 
     except Exception as e:
-        app.logger.warning("mpd_client wait exception {}".format(e.__class__))
+        app.logger.debug("mpd_client wait exception {}".format(e.__class__))
     
     mpd_client.disconnect()
     mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
