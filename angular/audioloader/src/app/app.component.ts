@@ -90,7 +90,7 @@ export class AppComponent {
     'client_id': 'guest'
   }
 
-  currentsong = {'title': 'not playing', 'active': false, 'title_short': 'not playing', 'album': '', 'track': '', 'artist': '', 'players': []};
+  currentsong = {'title': 'not playing', 'active': false, 'title_short': 'not playing', 'album': '', 'track': '', 'artist': '', 'players': [], 'default_stream': ''};
 
   dash = false;
   active_area = "browser";
@@ -123,8 +123,6 @@ export class AppComponent {
         if(this.settings['log'] == 'debug') console.log('blur event');
         this.pollCounter = interval(5000);
     }
-
-
 
 
   constructor(private environment: AppConfigService, private http: HttpClient, private modalService: NgbModal, private http2: HttpClient, public toastService: ToastService) {
@@ -217,6 +215,9 @@ export class AppComponent {
       if(this.settings['log'] == 'debug') console.log(this.currentsong);
       this.pollWaitState = false;
       if(this.currentsong.players.length > 1) this.streamplayers = true; else this.streamplayers = false;
+      if((typeof(localStorage.stream) == "undefined" || localStorage.stream == '') && typeof(this.currentsong['default_stream']) != "undefined" && ( typeof(this.currentsong['stream_updated']) == "undefined" || localStorage.stream_updated == false ) ){
+        localStorage.stream = this.currentsong['default_stream'];
+      }
       this.pollCurrentsong();
     },
     async error => {
@@ -612,8 +613,6 @@ export class AppComponent {
 
 
   }
-
-
 
 
   openModal(dir) {

@@ -206,6 +206,7 @@ def poll_currentsong():
     content = mpd_client.currentsong()
     content.update(mpd_client.status())
     content['players'] = get_active_players()
+    content['default_stream'] = app.config.get('STREAM_URL', 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain')))
 
     return jsonify(process_currentsong(content))
 
@@ -233,7 +234,7 @@ def kodi():
     if request.args.get('action', 'Player.Stop') == 'Player.Open':
         kodi_data['params'] = {
                 'item': {
-                    'file': request.args.get('stream', 'http://localhost:18080')
+                    'file': request.args.get('stream', app.config.get('STREAM_URL', 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain'))))
                 }
             }
 
@@ -256,7 +257,7 @@ def upnp():
     try:
         d = upnpclient.Device(server)
         if request.args.get('action', 'Player.Stop') == 'Player.Open':
-            d.AVTransport.SetAVTransportURI(InstanceID='0', CurrentURI=request.args.get('stream', 'http://localhost:18080'),CurrentURIMetaData='Audioloader')
+            d.AVTransport.SetAVTransportURI(InstanceID='0', CurrentURI=request.args.get('stream', app.config.get('STREAM_URL', 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain')))),CurrentURIMetaData='Audioloader')
             d.AVTransport.Play(InstanceID='0', Speed='1')
         else:
             d.AVTransport.Stop(InstanceID='0')
@@ -667,6 +668,7 @@ def mpd_proxy():
             content = mpd_client.currentsong()
             content.update(mpd_client.status())
             content['players'] = get_active_players()
+            content['default_stream'] = app.config.get('STREAM_URL', 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain')))
             content = process_currentsong(content)
         mpd_client.disconnect()
 

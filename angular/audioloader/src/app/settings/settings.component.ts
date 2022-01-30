@@ -38,7 +38,10 @@ export class SettingsComponent {
 
   update(variable){
       if(variable == "mpd_port") localStorage.mpd_port = this.mpd_port;
-      if(variable == "stream") localStorage.stream = this.stream;
+      if(variable == "stream"){
+        localStorage.stream = this.stream;
+        localStorage.stream_updated = true;
+      }
       if(variable == "client_id") localStorage.client_id = this.client_id;
       if(variable == "target") localStorage.target = this.target;
       if(variable == "log") localStorage.log = this.log;
