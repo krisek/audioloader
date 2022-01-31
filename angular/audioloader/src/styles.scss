@@ -1,0 +1,16 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import '../node_modules/@angular/material/theming';
+
+@include mat-core();
+
+$custom-theme-primary: mat-palette($mat-indigo);
+$custom-theme-accent: mat-palette($mat-blue-grey, A200, A100, A400);
+$custom-theme-warn: mat-palette($mat-indigo);
+
+$custom-theme: mat-light-theme($custom-theme-primary, $custom-theme-accent, $custom-theme-warn);
+
+@include angular-material-theme($custom-theme);
+
+@import '~bootstrap/dist/css/bootstrap.css';
+@import 'assets/album.css';
