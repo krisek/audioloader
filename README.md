@@ -20,7 +20,7 @@ The application features five ways of selecting music from MPD:
 
 The Flask application runs on the same system where you run MPD. You can configure any supported output method on MPD; a very common use case is to install the application on a Raspberry Pi (or home server), configure MPD with HTTP stream output, so that you can stream music from all of your devices.
 
-If you configure the MPD server with a HTTP stream output, the application can load this stream to a Kodi server or the UPnP media renderers discovered, so that you can listen music on your Kodi or UPnP connected sound system. Don't forget to configure the STREAM_URL parameter in config.py or in the 'stream from' parameter in the settings menu of the web UI.
+If you configure the MPD server with a HTTP stream output, the application can load this stream to a Kodi server or the UPnP media renderers discovered, so that you can listen music on your Kodi or UPnP connected sound system. Don't forget to configure the STREAM_URL parameter in config.py or in the 'stream from' parameter in the8 settings menu of the web UI.
 
 # Installation
 

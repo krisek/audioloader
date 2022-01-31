@@ -1,16 +1,16 @@
     <div class="modal-header" id="settings">
-      <h4 style="text-align: center;" class="modal-title">Settings</h4>
+        <h4 style="text-align: center;" class="modal-title">Settings</h4>
 
     </div>
     <div class="modal-body">
 
-      MPD port: <input id="mpd_port" class="form-control" placeholder="mpd port on server" name="mpd_port" [value]="mpd_port" (input)="mpd_port = $event.target.value; update('mpd_port')" onfocus="this.select();"><br/>
-      Stream from: <input id="stream" class="form-control" name="stream" [value]="stream" placeholder="the stream what you configured in mpd" (input)="stream = $event.target.value; update('stream')" onfocus="this.select();"><br/>
-      Client: <input id="client_id" class="form-control" placeholder="what name to use to store dash data on server" name="client_id" [value]="client_id" (input)="client_id = $event.target.value; update('client_id')" onfocus="this.select();"><br/>
-      Kodi server: <input id="target" class="form-control" placeholder="hostname of your kodi server" name="target" [value]="target" (input)="target = $event.target.value; update('target')" onfocus="this.select();"><br/>
-      Log level: <input id="log" class="form-control" placeholder="set log to debug" name="log" [value]="log" (input)="log = $event.target.value; update('log')" onfocus="this.select();"><br/><br/>
+        MPD port: <input id="mpd_port" class="form-control" placeholder="mpd port on server" name="mpd_port" [value]="mpd_port" (input)="mpd_port = $event.target['value']; update('mpd_port')" onfocus="this.select();"><br />
+        Stream from: <input id="stream" class="form-control" name="stream" [value]="stream" placeholder="the stream what you configured in mpd" (input)="stream = $event.target['value']; update('stream')" onfocus="this.select();"><br />
+        Client: <input id="client_id" class="form-control" placeholder="what name to use to store dash data on server" name="client_id" [value]="client_id" (input)="client_id = $event.target['value']; update('client_id')" onfocus="this.select();"><br />
+        Kodi server: <input id="target" class="form-control" placeholder="hostname of your kodi server" name="target" [value]="target" (input)="target = $event.target['value']; update('target')" onfocus="this.select();"><br />
+        Log level: <input id="log" class="form-control" placeholder="set log to debug" name="log" [value]="log" (input)="log = $event.target['value']; update('log')" onfocus="this.select();"><br /><br />
 
     </div>
     <div class="modal-footer">
-      <button type="button" class="btn " (click)="activeModal.dismissAll('Close click')">Close</button>
+        <button type="button" class="btn " (click)="activeModal.dismissAll('Close click')">Close</button>
     </div>

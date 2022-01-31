@@ -1,247 +1,293 @@
 <app-toast aria-live="polite" aria-atomic="true"></app-toast>
 
 <style>
+    .navbar-dark {
+        background-color: #5D7AB1;
+        min-height: 3.8rem;
+        padding-bottom: 0px;
+        padding-top: 0px;
+    }
 
-.navbar-dark {
-    background-color: #5D7AB1;
-    min-height: 3.8rem;
-    padding-bottom: 0px;
-    padding-top: 0px;
-}
+    .navbar-brand {
+        padding-bottom: 0px;
+        padding-top: 0.1rem;
+    }
 
-.navbar-brand {
-  padding-bottom: 0px;
-  padding-top: 0.1rem;
-}
+    .form-control {
+        height: 2.1rem;
+        padding-top: 0rem;
+        padding-bottom: 0rem;
+        display: unset;
+        width: unset;
+        vertical-align: 0.35em;
+    }
 
-.form-control {
-  height: 2.1rem;
-  padding-top: 0rem;
-  padding-bottom: 0rem;
+    .nav-link {
+        color: #fff;
+        display: unset;
+    }
 
+    .dropdown {
+        display: unset !important;
+    }
 
-}
-.nav-link {
-    color: #fff;
+    .long {}
 
-}
+    .verylong {}
 
-.long {
+    .truncate {
+        width: 250px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-}
-.verylong {
+    .long-and-truncated {
+        flex: 100;
 
-}
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-.truncate {
-  width: 250px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+    .flex-parent {
+        display: flex;
+        align-items: center;
+    }
 
-.long-and-truncated {
-  flex: 100;
+    ::ng-deep .progress-bar {
+        background-color: #ccc !important;
+    }
 
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.flex-parent {
-  display: flex;
-  align-items: center;
-}
-
-::ng-deep .progress-bar {
-  background-color: #ccc !important;
-}
-::ng-deep .progress {
-  height: 1px !important;
-  background-color: inherit !important;
-}
-
+    ::ng-deep .progress {
+        height: 1px !important;
+        background-color: inherit !important;
+    }
 </style>
 
 <nav class="navbar navbar-expand-lg navbar-dark">
-<div class="container flex-parent">
-    <a href="#" class="navbar-brand" (click)="showDir(dir)"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="folders" >folder_open</mat-icon></a>
-    <a href="#" class="navbar-brand" (click)="showDash()"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="dashboard" >dashboard</mat-icon></a>
-    <a href="#" class="navbar-brand" (click)="showRadio()"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="radio" >hvac</mat-icon></a>
+    <div class="container flex-parent">
+        <a href="#" class="navbar-brand" (click)="showDir(dir)">
+            <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="folders">folder_open</mat-icon>
+        </a>
+        <a href="#" class="navbar-brand" (click)="showDash()">
+            <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="dashboard">dashboard</mat-icon>
+        </a>
+        <a href="#" class="navbar-brand" (click)="showRadio()">
+            <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="radio">hvac</mat-icon>
+        </a>
 
-    <div class="navbar-brand flex-child long-and-truncated" ng-class="{'long': (currentsong['title_short'].length > 15), 'verylong': (currentsong['title_short'].length > 25)}"   [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong(true)"><div class="long-and-truncated" style="font-size: 1rem; line-height:1.2rem;">{{ currentsong['display_title_top'] }}</div><div  class="long-and-truncated"  style="font-size: 1.1rem;">{{ currentsong['title_short'] }}</div>
-    <ngb-progressbar *ngIf="currentsong['active']" [value]="currentsong['elapsed']" [max]="currentsong['duration']"></ngb-progressbar>
+        <div class="navbar-brand flex-child long-and-truncated" ng-class="{'long': (currentsong['title_short'].length > 15), 'verylong': (currentsong['title_short'].length > 25)}" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong(true)">
+            <div class="long-and-truncated" style="font-size: 1rem; line-height:1.2rem;">{{ currentsong['display_title_top'] }}</div>
+            <div class="long-and-truncated" style="font-size: 1.1rem;">{{ currentsong['title_short'] }}</div>
+            <ngb-progressbar *ngIf="currentsong['active']" [value]="currentsong['elapsed']" [max]="currentsong['duration']"></ngb-progressbar>
 
 
+        </div>
+
+
+        <a href="#" class="navbar-brand navbar-toggler" (click)="isMenuOpen = !isMenuOpen">
+            <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon">menu</mat-icon>
+        </a>
+        :
+
+        <div class="collapse navbar-collapse" [ngClass]="{ 'show': isMenuOpen }">
+            <form class="form-inline my-2 my-lg-0 ml-auto">
+
+                <a href="#" (click)="openStream(0)" class="nav-item nav-link" *ngIf="currentsong['active'] && ! streamplayers">
+                    <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream to kodi" [@loadingTrigger]="loading['kodiload'] ? 'loading' : 'normal'">queue_music</mat-icon>
+                </a>
+
+                <a href="#" (click)="stopStream(0)" class="nav-item nav-link" *ngIf="currentsong['active']  && ! streamplayers">
+                    <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop stream on kodi" [@loadingTrigger]="loading['kodistop'] ? 'loading' : 'normal'">remove_from_queue</mat-icon>
+                </a>
+
+                <div ngbDropdown class="nav-item" *ngIf="streamplayers && currentsong['active']">
+                    <a href="#" (click)="false" class="nav-link" ngbDropdownToggle>
+                        <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream">queue_music</mat-icon>
+                    </a>
+                    <div ngbDropdownMenu>
+                        <a *ngFor="let player of currentsong.players; index as i; " href="#" class="dropdown-item" (click)="openStream(i)">{{ player.name  }}</a>
+                    </div>
+                </div>
+
+                <div ngbDropdown class="nav-item" *ngIf="streamplayers  && currentsong['active']">
+                    <a href="#" (click)="false" class="nav-link" ngbDropdownToggle>
+                        <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream">remove_from_queue</mat-icon>
+                    </a>
+                    <div ngbDropdownMenu>
+                        <a *ngFor="let player of currentsong.players; index as i; " href="#" class="dropdown-item" (click)="stopStream(i)">{{ player.name  }}</a>
+                    </div>
+                </div>
+
+
+                <a href="#" class="nav-item nav-link" *ngIf="currentsong['next_state']" (click)="sendCommand(currentsong['next_state'])">
+                    <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="{{ currentsong['next_title'] }}">{{ currentsong['next_icon'] }}</mat-icon>
+                </a>
+
+                <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('stop')">
+                    <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop" [@loadingTrigger]="loading['stop'] ? 'loading' : 'normal'">stop</mat-icon>
+                </a>
+
+                <a href="#" class="nav-item nav-link" *ngIf="!currentsong['consume']" (click)="sendCommand('prev')">
+                    <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="prev" [@loadingTrigger]="loading['prev'] ? 'loading' : 'normal'">fast_rewind</mat-icon>
+                </a>
+
+                <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('next')">
+                    <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="next" [@loadingTrigger]="loading['next'] ? 'loading' : 'normal'">fast_forward</mat-icon>
+                </a>
+
+
+                <input class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="{{ radio ?  'search station...' : 'search...'}}" name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target['value']; searchItem($event.target['value'])" onfocus="this.select();" onmouseup="return false;">
+
+                <a href="#" class="nav-item nav-link">
+                    <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="settings" (click)="openSettings()">settings</mat-icon>
+                </a>
+            </form>
+
+        </div>
     </div>
-
-
-    <a href="#" class="navbar-brand navbar-toggler" (click)="isMenuOpen = !isMenuOpen"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" >menu</mat-icon></a>
-
-
-  <div class="collapse navbar-collapse"
-       [ngClass]="{ 'show': isMenuOpen }">
-    <form class="form-inline my-2 my-lg-0 ml-auto">
-
-    <a href="#" (click)="openStream(0)" class="nav-item nav-link" *ngIf="currentsong['active'] && ! streamplayers"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream to kodi"  [@loadingTrigger]="loading['kodiload'] ? 'loading' : 'normal'">queue_music</mat-icon></a>
-
-    <a href="#" (click)="stopStream(0)" class="nav-item nav-link" *ngIf="currentsong['active']  && ! streamplayers"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop stream on kodi"  [@loadingTrigger]="loading['kodistop'] ? 'loading' : 'normal'">remove_from_queue</mat-icon></a>
-
-      <div ngbDropdown class="nav-item" *ngIf="streamplayers && currentsong['active']">
-        <a href="#" (click)="false" class="nav-link" ngbDropdownToggle><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream">queue_music</mat-icon></a>
-        <div ngbDropdownMenu>
-          <a *ngFor="let player of currentsong.players; index as i; " href="#" class="dropdown-item"  (click)="openStream(i)">{{ player.name  }}</a>
-        </div>
-      </div>
-
-      <div ngbDropdown class="nav-item" *ngIf="streamplayers  && currentsong['active']" >
-        <a href="#" (click)="false" class="nav-link" ngbDropdownToggle><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream">remove_from_queue</mat-icon></a>
-        <div ngbDropdownMenu>
-          <a *ngFor="let player of currentsong.players; index as i; " href="#" class="dropdown-item"  (click)="stopStream(i)">{{ player.name  }}</a>
-        </div>
-      </div>
-
-
-    <a href="#" class="nav-item nav-link" *ngIf="currentsong['next_state']" (click)="sendCommand(currentsong['next_state'])"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="{{ currentsong['next_title'] }}" >{{ currentsong['next_icon'] }}</mat-icon></a>
-
-    <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('stop')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop"  [@loadingTrigger]="loading['stop'] ? 'loading' : 'normal'">stop</mat-icon></a>
-
-    <a href="#" class="nav-item nav-link" *ngIf="!currentsong['consume']" (click)="sendCommand('prev')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="prev"  [@loadingTrigger]="loading['prev'] ? 'loading' : 'normal'">fast_rewind</mat-icon></a>
-
-    <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('next')"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="next"  [@loadingTrigger]="loading['next'] ? 'loading' : 'normal'">fast_forward</mat-icon></a>
-
-        <input class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="{{ radio ?  'search station...' : 'search...'}}" name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target.value; searchItem($event.target.value)" onfocus="this.select();" onmouseup="return false;">
-
-        <a href="#" class="nav-item nav-link"><mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="settings" (click)="openSettings()">settings</mat-icon></a>
-    </form>
-
-  </div>
-</div>
 </nav>
 <main role="main">
 
-<div class="album py-5 bg-light">
-  <div class="container">
-    <div class="row">
-      <div class="col-sm-12" >
-        <ng-container *ngIf="dirbrowser">
-        <span *ngFor="let elem of path">/<a href="#" class="albumlink" (click)="showDir(elem.dir)">{{ elem.name }}</a></span>&nbsp;&nbsp;
-            <a href="#" class="togglestar albumlink" (click)="toggleFavourite(dir)"><mat-icon aria-hidden="false" aria-label="fav" *ngIf="favourite" class="dash-icon togglestar-icon">favorite</mat-icon><mat-icon aria-hidden="false" aria-label="fav" *ngIf="!favourite" class="dash-icon togglestar-icon">favorite_border</mat-icon></a>
-        <a href="#" class="play" (click)="openModal(dir)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon></a>
-        <span *ngIf="lookfor">&nbsp;&nbsp;|&nbsp;<a href="#" (click)="searchItem(lookfor)">{{ lookfor }}</a></span>
+    <div class="album py-5 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-12">
+                    <ng-container *ngIf="dirbrowser">
+                        <span *ngFor="let elem of path">/<a href="#" class="albumlink" (click)="showDir(elem.dir)">{{ elem.name }}</a></span>&nbsp;&nbsp;
+                        <a href="#" class="togglestar albumlink" (click)="toggleFavourite(dir)">
+                            <mat-icon aria-hidden="false" aria-label="fav" *ngIf="favourite" class="dash-icon togglestar-icon">favorite</mat-icon>
+                            <mat-icon aria-hidden="false" aria-label="fav" *ngIf="!favourite" class="dash-icon togglestar-icon">favorite_border</mat-icon>
+                        </a>
+                        <a href="#" class="play" (click)="openModal(dir)" class="albumlink">
+                            <mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon>
+                        </a>
+                        <span *ngIf="lookfor">&nbsp;&nbsp;|&nbsp;<a href="#" (click)="searchItem(lookfor)">{{ lookfor }}</a></span>
 
-        <br/>
-        <ng-container *ngIf="!showlist">
-        <div class="album-cover inline-block" *ngFor="let elem of list_dir" >
-          <app-albumcell [album]="tree_dir[elem]" [servicesBasePath]="servicesBasePath" [mpd_port]="settings.mpd_port" [area]="active_area" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
-        </div>
-        </ng-container>
-        <ng-container *ngIf="showlist">
-        <span *ngFor="let initial of list_alpha">
-          <b>{{ initial }}</b><br/>
-        <span *ngFor="let elem of list_dir_alpha[initial]">
-            <a href="#" class="togglestar albumlink" (click)="toggleFavourite(tree_dir[elem].name)"><mat-icon aria-hidden="false" aria-label="fav" *ngIf="tree_dir[elem].favourite" class="dash-icon togglestar-icon">favorite</mat-icon><mat-icon aria-hidden="false" aria-label="fav" *ngIf="!tree_dir[elem].favourite" class="dash-icon togglestar-icon">favorite_border</mat-icon></a>
-            <a href="#" class="play" (click)="openModal(tree_dir[elem].name)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon></a>
-              <a href="#" (click)="showDir(tree_dir[elem].name)" title="{{ tree_dir[elem].name }} ({{ tree_dir[elem].playhours }})" class="albumlink">{{ tree_dir[elem].title }} ({{ tree_dir[elem].playhours }})</a>
-        </span>
-        <br/>
-        </span>
-        </ng-container>
+                        <br />
+                        <ng-container *ngIf="!showlist">
+                            <div class="album-cover inline-block" *ngFor="let elem of list_dir">
+                                <app-albumcell [album]="tree_dir[elem]" [servicesBasePath]="servicesBasePath" [mpd_port]="settings.mpd_port" [area]="active_area" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
+                            </div>
+                        </ng-container>
+                        <ng-container *ngIf="showlist">
+                            <span *ngFor="let initial of list_alpha">
+                                <b>{{ initial }}</b><br />
+                                <span *ngFor="let elem of list_dir_alpha[initial]">
+                                    <a href="#" class="togglestar albumlink" (click)="toggleFavourite(tree_dir[elem].name)">
+                                        <mat-icon aria-hidden="false" aria-label="fav" *ngIf="tree_dir[elem].favourite" class="dash-icon togglestar-icon">favorite</mat-icon>
+                                        <mat-icon aria-hidden="false" aria-label="fav" *ngIf="!tree_dir[elem].favourite" class="dash-icon togglestar-icon">favorite_border</mat-icon>
+                                    </a>
+                                    <a href="#" class="play" (click)="openModal(tree_dir[elem].name)" class="albumlink">
+                                        <mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon>
+                                    </a>
+                                    <a href="#" (click)="showDir(tree_dir[elem].name)" title="{{ tree_dir[elem].name }} ({{ tree_dir[elem].playhours }})" class="albumlink">{{ tree_dir[elem].title }} ({{ tree_dir[elem].playhours }})</a>
+                                </span>
+                                <br />
+                            </span>
+                        </ng-container>
 
-        <div id="files">
-          <ng-container *ngIf="!dirs">
-            <div class="outer_shadow">
-            <div class="album-cover-frame">
-              <img  src="{{ servicesBasePath }}/cover?mpd_port={{ settings.mpd_port }}&directory={{ encoded }}" height="125" title="{{ title }}" class="album-cover-img" class="album-cover-img" type="button"  data-toggle="modal" data-target="#exampleModal" (click)="openModal(dir)"/>
-            </div>
-            </div>
-            <span class="" *ngFor="let file of tree_file | keyvalue">
-                <span *ngIf="file.value.track">{{file.value.track}}  -  {{file.value.title}} ({{file.value.duration*1000 | date:'H:mm:ss':'UTC' | replace:'0:':'' | replace:'0:':''}})</span>
-                <span *ngIf="!file.value.track">{{file.value.title}}</span>
-                <br/>
-            </span>
+                        <div id="files">
+                            <ng-container *ngIf="!dirs">
+                                <div class="outer_shadow">
+                                    <div class="album-cover-frame">
+                                        <img src="{{ servicesBasePath }}/cover?mpd_port={{ settings.mpd_port }}&directory={{ encoded }}" height="125" title="{{ title }}" class="album-cover-img" class="album-cover-img" type="button" data-toggle="modal" data-target="#exampleModal" (click)="openModal(dir)" />
+                                    </div>
+                                </div>
+                                <span class="" *ngFor="let file of tree_file | keyvalue">
+                                    <span *ngIf="file.value['track']">{{file.value['track']}} - {{file.value['title']}} ({{file.value['duration']*1000 | date:'H:mm:ss':'UTC' | replace:'0:':'' | replace:'0:':''}})</span>
+                                    <span *ngIf="!file.value['track']">{{file.value['title']}}</span>
+                                    <br />
+                                </span>
 
-          </ng-container>
-        </div>
-        </ng-container>
-        <ng-container *ngIf="dash">
-          <div class="row">
-           <div class="col-11 col-sm-11 col-md-10 col-lg-9 col-xl-9" id="div-randomset">
-           <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['randomset']" >
-            <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port"  (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
-          </div>
-          <br/>
-          <a href="#" (click)="newSet()"><mat-icon aria-hidden="false" aria-label="fav" title="new set" class="large material-icons">sync</mat-icon></a>
-
-
-          <hr class="d-none d-sm-block">
-          <div class='d-block d-sm-none hr'>
-            <span class='hr-title'>Favourites</span>
-          </div>
+                            </ng-container>
+                        </div>
+                    </ng-container>
+                    <ng-container *ngIf="dash">
+                        <div class="row">
+                            <div class="col-11 col-sm-11 col-md-10 col-lg-9 col-xl-9" id="div-randomset">
+                                <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['randomset']">
+                                    <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
+                                </div>
+                                <br />
+                                <a href="#" (click)="newSet()">
+                                    <mat-icon aria-hidden="false" aria-label="fav" title="new set" class="large material-icons">sync</mat-icon>
+                                </a>
 
 
-          <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['favourites']" >
-            <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port"  (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
-          </div>
+                                <hr class="d-none d-sm-block">
+                                <div class='d-block d-sm-none hr'>
+                                    <span class='hr-title'>Favourites</span>
+                                </div>
 
-          </div>
 
-           <div class="col-1 col-sm-1 col-md-2 col-lg-3 col-xl-3" id="div-history2">
-<!--      <div class='d-block d-sm-none hr'>
+                                <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['favourites']">
+                                    <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
+                                </div>
+
+                            </div>
+
+                            <div class="col-1 col-sm-1 col-md-2 col-lg-3 col-xl-3" id="div-history2">
+                                <!--      <div class='d-block d-sm-none hr'>
             <span class='hr-title'>History</span>
           </div>
 //-->
-          <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['history']" >
-            <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
-          </div>
-          </div>
+                                <div class="album-cover inline-block" *ngFor="let elem of list_dir_dash['history']">
+                                    <app-albumcell [album]="elem" [servicesBasePath]="servicesBasePath" [area]="active_area" [mpd_port]="settings.mpd_port" (messageEvent)="processAlbumCellAction($event)"></app-albumcell>
+                                </div>
+                            </div>
 
-          </div>
-        </ng-container>
-        <ng-container *ngIf="radio">
+                        </div>
+                    </ng-container>
+                    <ng-container *ngIf="radio">
 
-            <div class="album-cover inline-block" *ngFor="let elem of radio_history['radio_history']" >
-              <div class="outer_shadow">
-                <div class="album-cover-frame">
-                  <img src="{{ radio_history['stations'][elem]['favicon'] }}" title="{{ radio_history['stations'][elem]['name'] }}" class="album-cover-img" type="button"  data-toggle="modal" data-target="#exampleModal" (click)="openRadioModal(radio_history['stations'][elem]['name'], radio_history['stations'][elem]['stationuuid'], radio_history['stations'][elem]['url'], radio_history['stations'][elem]['favicon'])" />
+                        <div class="album-cover inline-block" *ngFor="let elem of radio_history['radio_history']">
+                            <div class="outer_shadow">
+                                <div class="album-cover-frame">
+                                    <img src="{{ radio_history['stations'][elem]['favicon'] }}" title="{{ radio_history['stations'][elem]['name'] }}" class="album-cover-img" type="button" data-toggle="modal" data-target="#exampleModal" (click)="openRadioModal(radio_history['stations'][elem]['name'], radio_history['stations'][elem]['stationuuid'], radio_history['stations'][elem]['url'], radio_history['stations'][elem]['favicon'])" />
+                                </div>
+                                <div class="album-title">
+                                    <span class="albumlink">
+                                        <a href="#" class="play" (click)="openRadioModal(radio_history['stations'][elem]['name'], radio_history['stations'][elem]['stationuuid'], radio_history['stations'][elem]['url'], radio_history['stations'][elem]['favicon'])" class="albumlink">
+                                            <mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon>
+                                        </a> <a href="#" (click)="openRadioModal(radio_history['stations'][elem]['name'], radio_history['stations'][elem]['stationuuid'], radio_history['stations'][elem]['url'], radio_history['stations'][elem]['favicon'])" title="{{ radio_history['stations'][elem]['name'] }}" class="albumlink">{{ radio_history['stations'][elem]['name'] }}</a>
+                                    </span>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <br />
+
+
+                        <hr class="d-none d-sm-block">
+                        <div class='d-block d-sm-none hr'><span class='hr-title'>Search result</span></div>
+
+                        <span *ngFor="let elem of stations">
+                            <a href="#" class="play" (click)="openRadioModal(elem.name, elem.stationuuid, elem.url, elem.favicon)" class="albumlink">
+                                <mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon>
+                            </a> <a href="#" (click)="openRadioModal(elem.name, elem.stationuuid, elem.url, elem.favicon)" class="albumlink">{{ elem.name }} ({{ elem.bitrate }}kbps) {{ elem.country }}</a><br>
+                        </span>
+
+
+
+
+
+
+
+                    </ng-container>
                 </div>
-                <div class="album-title">
-                  <span class="albumlink">
-                      <a href="#" class="play" (click)="openRadioModal(radio_history['stations'][elem]['name'], radio_history['stations'][elem]['stationuuid'], radio_history['stations'][elem]['url'], radio_history['stations'][elem]['favicon'])" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon></a> <a href="#" (click)="openRadioModal(radio_history['stations'][elem]['name'], radio_history['stations'][elem]['stationuuid'], radio_history['stations'][elem]['url'], radio_history['stations'][elem]['favicon'])" title="{{ radio_history['stations'][elem]['name'] }}" class="albumlink">{{ radio_history['stations'][elem]['name'] }}</a>
-                  </span>
-                </div>
-
-              </div>
             </div>
-
-          <br/>
-
-
-          <hr class="d-none d-sm-block">
-          <div class='d-block d-sm-none hr'><span class='hr-title'>Search result</span></div>
-
-          <span *ngFor="let elem of stations">
-            <a href="#" class="play" (click)="openRadioModal(elem.name, elem.stationuuid, elem.url, elem.favicon)" class="albumlink"><mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon></a> <a href="#" (click)="openRadioModal(elem.name, elem.stationuuid, elem.url, elem.favicon)" class="albumlink">{{ elem.name }} ({{ elem.bitrate }}kbps) {{ elem.country }}</a><br>
-          </span>
-
-
-
-
-
-
-
-        </ng-container>
-      </div>
+        </div>
     </div>
-  </div>
-</div>
 
 </main>
 
 <footer class="text-muted">
-  <div class="container">
-    <p class="float-bottom"><small>
-      <a href="#">Back to top</a></small>
-    </p>
-  </div>
+    <div class="container">
+        <p class="float-bottom"><small>
+                <a href="#">Back to top</a></small>
+        </p>
+    </div>
 </footer>
