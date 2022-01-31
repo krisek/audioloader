@@ -158,5 +158,19 @@ If UPnP discovery is enabled you need to turn on UPnP on Kodi as well, otherwise
 - (Better) playlist management
 - At the moment the application plays in consume mode, ie. there is no rewind option
 
+# Development
+
+```bash
+corepack enable
+cd angular
+sudo npm install --global yarn
+# ng new --skip-install audioloader
+ng config cli.packageManager yarn
+yarn init -2
+yarn
+cd audioloader
+ng serve  --host 0.0.0.0
+```
+
 # About
 The application was created by Kristof Imre Szabo.
