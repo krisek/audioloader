@@ -21,4 +21,6 @@ class Config(object):
   STREAM_URL = 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain'))
   #filtering albums from randomset matching this regexp (optional, can be left empty)
   SET_FILTER = r'kids|horspiel'
+  MPD_HOST = 'localhost'
+  REDIS_HOST = 'localhost'
   

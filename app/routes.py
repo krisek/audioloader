@@ -50,7 +50,7 @@ def mpd_wrap(command, *args, **kwargs):
     except Exception as e:
         app.logger.debug('have to reconnect')
         app.logger.debug(traceback.format_exc())
-        mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
+        mpd_client.connect(app.config.get('MPD_HOST', 'localhost'), int(request.args.get('mpd_port', '6600')))
     finally:
         return command(*args, **kwargs)
 
@@ -67,7 +67,7 @@ def cover():
 
     #here we go for redis data
     try:
-        r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+        r = redis.Redis(host=app.config.get('REDIS_HOST', 'localhost'), port=6379, db=0, decode_responses=True)
         cover = r.get('audioloader:cover:' + directory)
         if cover:
             app.logger.debug('got cover from redis: ' + cover)
@@ -84,7 +84,7 @@ def cover():
         mpd_client = MPDClient()
         mpd_client.timeout = 600
         mpd_client.idletimeout = 600
-        mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
+        mpd_client.connect(app.config.get('MPD_HOST', 'localhost'), int(request.args.get('mpd_port', '6600')))
 
         dir_content = mpd_client.listfiles( directory )
 
@@ -118,7 +118,7 @@ def cover():
         app.logger.debug('got cover from mpd: ' + cover)
         #set key in redis
         try:
-            r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+            r = redis.Redis(host=app.config.get('REDIS_HOST', 'localhost'), port=6379, db=0, decode_responses=True)
             r.set('audioloader:cover:' + directory, cover)
         except Exception as e:
             app.logger.warn('setting cover in redis nok ' + str(e))
@@ -193,7 +193,7 @@ def poll_currentsong():
     content = {}
     mpd_client = MPDClient()
     mpd_client.idletimeout = 30 
-    mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
+    mpd_client.connect(app.config.get('MPD_HOST', 'localhost'), int(request.args.get('mpd_port', '6600')))
     try:
         mpd_client.idle('playlist', 'player')
         app.logger.debug("waiting for mpd_client")
@@ -202,7 +202,7 @@ def poll_currentsong():
         app.logger.debug("mpd_client wait exception {}".format(e.__class__))
     
     mpd_client.disconnect()
-    mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
+    mpd_client.connect(app.config.get('MPD_HOST', 'localhost'), int(request.args.get('mpd_port', '6600')))
     content = mpd_client.currentsong()
     content.update(mpd_client.status())
     content['players'] = get_active_players()
@@ -282,7 +282,7 @@ def generate_randomset():
 
         mpd_client.timeout = 600
         mpd_client.idletimeout = 600
-        mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
+        mpd_client.connect(app.config.get('MPD_HOST', 'localhost'), int(request.args.get('mpd_port', '6600')))
         albums = mpd_client.list('album')
         filter = request.args.get('set_filter', app.config.get('SET_FILTER', ''))
         i = 0
@@ -379,7 +379,7 @@ def get_active_players():
     players = []
 
     try:
-        r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+        r = redis.Redis(host=app.config.get('REDIS_HOST', 'localhost'), port=6379, db=0, decode_responses=True)
         for key in r.scan_iter("upnp:player:*:last_seen"):
             last_seen = float(r.get(key))
             #app.logger.debug("last seen vs now "+ key + "   " + str(last_seen) + '   ' + str(time.time()) + "   " +  str(time.time() - last_seen) )
@@ -432,7 +432,7 @@ def data():
 
         mpd_client.timeout = 600
         mpd_client.idletimeout = 600
-        mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
+        mpd_client.connect(app.config.get('MPD_HOST', 'localhost'), int(request.args.get('mpd_port', '6600')))
         app.logger.debug('got ' + request.path)
 
 
@@ -518,7 +518,7 @@ def mpd_proxy():
 
         mpd_client.timeout = 600
         mpd_client.idletimeout = 600
-        mpd_client.connect('localhost', int(request.args.get('mpd_port', '6600')))
+        mpd_client.connect(app.config.get('MPD_HOST', 'localhost'), int(request.args.get('mpd_port', '6600')))
         app.logger.debug('got ' + request.path)
         if(request.path == '/listfiles'):
             content['tree'] = mpd_client.listfiles( request.args.get('directory', '.'))
