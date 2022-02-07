@@ -24,7 +24,11 @@ If you configure the MPD server with a HTTP stream output, the application can l
 
 # Installation
 
+## Install from repository
+
 I detail here how to install the application on Debian/Ubuntu derivatives, but you can get it running wherever Python and Pip are available.
+
+NOTE: the Angular assets are pre-built and part of the repository, you just need to deploy and configure Flask
 
 1. Install base packages
 
@@ -58,7 +62,7 @@ cp config.tpl.py config.py
 
 In this file you can edit the configuration of the Flask backend.
 
-```
+```python
   #serve cover art directly or through a redirect
   COVER_RESPONSE_TYPE = 'direct'
 
@@ -82,6 +86,12 @@ In this file you can edit the configuration of the Flask backend.
   #url of the mpd lame/vorbis stream (httpd output) configured ~ can be overriden from the web UI settings
   STREAM_URL = 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain'))
 
+  #hostname of your mpd server
+  MPD_HOST = 'localhost'
+  
+  #hostname of your Redis server
+  REDIS_HOST = 'localhost'
+
 ```
 
 5. Web server
@@ -102,7 +112,44 @@ Two scripts are included in the repository.
 
 If you want to enable UPnP discovery, start the `disover.py` script as well, it requires two parameters: -m the IP address of the audioloader host and -n the local subnet. (This might be enhanced in later releases.) An example systemd unit file is included as well.
 
-7. You've been warned
+## Install from container (experimental)
+
+I use `podman` on my Rpi, but `docker` should work the same.
+
+1. Download and configure `config.py`
+
+```bash
+curl https://raw.githubusercontent.com/krisek/audioloader/master/config.tpl.py -o config.py
+```
+
+Edit `config.py` as you need. Don't forget: the container won't see `mpd` and `Redis` on `localhost`, you will need to set the real IP/resolvable hostname of the respective service there. `MUSIC_DIR` is important this is where you will need to map your actual directory containing your music collection on the system.
+
+2. Run the container
+
+```bash
+export MUSIC_DIR_SERVER=<directory containing your music collection>
+export MUSIC_DIR_AUDIOLOADER=/media/music/mp3 # or the directory you set in config.tpl
+export RELEASE=v0.0.1 # or the one you want to run
+mkdir user_data
+podman run -v $MUSIC_DIR_SERVER:$MUSIC_DIR_AUDIOLOADER -v ./config.py:/var/lib/audioloader/config.py  -v ./user_data:/var/lib/mpf -p 3400:3400/tcp docker.io/krisek11/audioloader:$RELEASE
+```
+
+Podman note: I had to do an 
+```bash
+echo `whoami`:2000000:65535 | sudo tee /etc/subgid 
+echo `whoami`:2000000:65535 | sudo tee /etc/subuid
+``` 
+on my Raspbian to get the container running as rootless user.
+
+3. Web server
+
+See (5.) in manual installation.
+
+4. Startup
+
+TBD
+
+## You've been warned
 
 No responsibility on my side for any damage. The application is intended to be used in friendly or appropriately protected network environment.
 
