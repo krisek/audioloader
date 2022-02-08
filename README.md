@@ -131,7 +131,7 @@ export MUSIC_DIR_SERVER=<directory containing your music collection>
 export MUSIC_DIR_AUDIOLOADER=/media/music/mp3 # or the directory you set in config.tpl
 export RELEASE=v0.0.1 # or the one you want to run
 mkdir user_data
-podman run -v $MUSIC_DIR_SERVER:$MUSIC_DIR_AUDIOLOADER -v ./config.py:/var/lib/audioloader/config.py  -v ./user_data:/var/lib/mpf -p 3400:3400/tcp docker.io/krisek11/audioloader:$RELEASE
+podman run -v $MUSIC_DIR_SERVER:$MUSIC_DIR_AUDIOLOADER -v ./config.py:/var/lib/audioloader/config.py  -v ./user_data:/var/lib/mpf:Z -p 3400:3400/tcp -name audioloader docker.io/krisek11/audioloader:$RELEASE
 ```
 
 Podman note: I had to do an 
@@ -140,6 +140,21 @@ echo `whoami`:2000000:65535 | sudo tee /etc/subgid
 echo `whoami`:2000000:65535 | sudo tee /etc/subuid
 ``` 
 on my Raspbian to get the container running as rootless user.
+
+In order to get `user_data` writable by the container you either give world write permissions to it (`chmod 777 user_data`) or you need to figure out to which host UID podman maps the container's al(1000) UID.
+
+```bash
+USER_DATA=user_data
+chmod 777 $USER_DATA # temporarly give word permissions to user_data
+podman exec -it audioloader touch /var/lib/mpf/test # change a file in the container
+REAL_UID=$(stat -c '%u' $USER_DATA/test) # check the uid of the created file on the host
+chmod 755 $USER_DATA # remove world permissions from user_data
+setfacl -m u:$REAL_UID:rw  $USER_DATA/* # provide permissions to mapped user
+setfacl -m u:$REAL_UID:rxw $USER_DATA
+setfacl -m d:u:$REAL_UID:rwx $USER_DATA
+rm $USER_DATA/test
+# cross fingers $REAL_UID won't be changed by podman
+```
 
 3. Web server
 
