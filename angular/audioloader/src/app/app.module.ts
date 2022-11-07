@@ -31,29 +31,28 @@ const appInitializerFn = (appConfig: AppConfigService) => {
 };
 
 @NgModule({
-  declarations: [
-    AppComponent, SettingsComponent, PopupComponent, ToastComponent, AlbumcellComponent, ReplacePipe
-  ],
-  imports: [
-    BrowserModule,
-    HttpClientModule,
-    CommonModule,
-    AppRoutingModule,
-    NgbModule,
-    BrowserAnimationsModule,
-    MatIconModule,
-    MatSlideToggleModule
-  ],
-  providers: [
-    AppConfigService,
+    declarations: [
+        AppComponent, SettingsComponent, PopupComponent, ToastComponent, AlbumcellComponent, ReplacePipe
+    ],
+    imports: [
+        BrowserModule,
+        HttpClientModule,
+        CommonModule,
+        AppRoutingModule,
+        NgbModule,
+        BrowserAnimationsModule,
+        MatIconModule,
+        MatSlideToggleModule
+    ],
+    providers: [
+        AppConfigService,
         {
             provide: APP_INITIALIZER,
             useFactory: appInitializerFn,
             multi: true,
             deps: [AppConfigService, ToastService]
         }
-  ],
-  bootstrap: [AppComponent],
-  entryComponents: [ SettingsComponent, PopupComponent, ToastComponent, AlbumcellComponent ]
+    ],
+    bootstrap: [AppComponent]
 })
 export class AppModule { }
