@@ -223,15 +223,24 @@ If UPnP discovery is enabled you need to turn on UPnP on Kodi as well, otherwise
 # Development
 
 ```bash
-corepack enable
-cd angular
-sudo npm install --global yarn
-# ng new --skip-install audioloader
-ng config cli.packageManager yarn
-yarn init -2
-yarn
-cd audioloader
-ng serve  --host 0.0.0.0
+apt update
+apt install -y git
+cd /opt
+tar zxvf /downloads/node-v18.12.1-linux-x64.tar.gz 
+cd /usr/local/bin/
+ln -s /opt/node-v18.12.1-linux-x64/bin/{corepack,node,npm,npx} .
+npm install --global yarn
+npm install -g @angular/cli
+ln -s /opt/node-v18.12.1-linux-x64/bin/{ng,yarn,yarnpkg} .
+cd /projects/audioloader/angular/audioloader
+yarn install
+yarn upgrade
+ng update @angular/cli
+ng update @angular/core
+ng update @angular/material
+ng update @angular/cdk
+ng serve --host 0.0.0.0
+
 ```
 
 # About
