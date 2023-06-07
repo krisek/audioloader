@@ -33,7 +33,7 @@ NOTE: the Angular assets are pre-built and part of the repository, you just need
 1. Install base packages
 
 ```bash
-sudo apt install redis-server redis-tools git uwsgi-plugin-python3 python3 python3-pip python3-virtualenv python-virtualenv
+sudo apt install redis-server redis-tools git uwsgi-plugin-python3 python3 python3-pip python3-virtualenv
 ```
 
 Redis is used to cache the name of folder images and to keep track of the UPnP devices discovered on the network. It slightly improves performance of showing folder images, but it is not a must to install it the application can work without it — though, if you want to have UPnP discovery, it is a must to install it.
