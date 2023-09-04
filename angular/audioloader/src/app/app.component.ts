@@ -105,10 +105,14 @@ export class AppComponent {
   lastPolledStarted = -1 * this.pollMinDelta;
 
   radio = false;
+  bandcamp = false;
   dirbrowser = false;
 
   stations = [];
   radio_history = {};
+  bandcamp_history = {};
+
+  bandcamp_enabled = true;
 
     @HostListener('window:focus', ['$event'])
     onFocus(event: FocusEvent): void {
@@ -210,6 +214,7 @@ export class AppComponent {
     this.http2.get<any>(this.servicesBasePath + '/poll_currentsong?mpd_port=' + this.settings['mpd_port']).subscribe(data => {
       //console.log(data);
       this.currentsong = data;
+      this.bandcamp_enabled = data['bandcamp_enabled'];
       this.currentsong['title_short'] = this.currentsong['display_title']; //this.truncate(this.currentsong['display_title'], 28);
       this.lastPolled = Date.now();
       if(this.settings['log'] == 'debug') console.log(this.currentsong);
@@ -240,6 +245,7 @@ export class AppComponent {
       //console.log(data);
 
       this.currentsong = data;
+      this.bandcamp_enabled = data['bandcamp_enabled'];
       this.loading['currentsong'] = false;
       if(this.currentsong.players.length > 1) this.streamplayers = true; else this.streamplayers = false;
       this.currentsong['title_short'] = this.currentsong['display_title'];//this.truncate(this.currentsong['display_title'], 28);
@@ -370,6 +376,17 @@ export class AppComponent {
   }
 
 
+  updateBandcampHistory(){
+    //this.radio_history = {}
+    this.http.get<any>(this.servicesBasePath + '/bandcamp_history?mpd_port=' + this.settings['mpd_port'] + '&client_id=' + this.settings['client_id']).subscribe(data => {
+        console.log('got bandcamp history');
+        console.log(data);
+        this.bandcamp_history = data;
+        }
+      )
+
+
+  }
 
   newSet(){
     this.showSuccess('requesting new set');
@@ -385,6 +402,7 @@ export class AppComponent {
   showDash(){
     this.dash = true;
     this.radio = false;
+    this.bandcamp = true;
     this.dirbrowser = false;
     console.log('show Dash called');
 
@@ -395,22 +413,35 @@ export class AppComponent {
       var spec = specs[i];
       this.updateSpec(spec);
     }
-
+    if(this.bandcamp_enabled){
+      this.updateBandcampHistory();
+    }
+    
   };
 
   showRadio(){
     this.radio = true;
+    this.bandcamp = false;
     this.dash = false;
     this.dirbrowser = false;
     this.updateRadioHistory();
 
   };
 
+  showBandcamp(){
+    this.bandcamp = true;
+    this.radio = false;
+    this.dash = false;
+    this.dirbrowser = false;
+    this.updateBandcampHistory();
+
+  };
 
 
   showDir(dir){
     console.log("showDir: " + dir);
     this.dash = false;
+    this.bandcamp = false;
     this.radio = false;
     this.dirbrowser = true;
     this.tree_dir = {};
@@ -432,8 +463,9 @@ export class AppComponent {
     if(lookfor.length < 3) return;
     console.log("searchItem " + lookfor);
 
-    if(!this.radio){
+    if((this.dash || this.dirbrowser) && !lookfor.match(/bandcamp.com\//)){
       this.dash = false;
+      this.bandcamp = false;
       this.active_area = "browser";
       this.http.get<any>(this.servicesBasePath + '/search?mpd_port=' + this.settings['mpd_port'] + '&pattern=' + encodeURIComponent(lookfor)).subscribe(data => {
         console.log(data);
@@ -447,10 +479,16 @@ export class AppComponent {
       this.updateDir(this.last_directory);
 
     }
-    else{
+    else if(this.radio){
       this.http.get<any>(this.servicesBasePath + '/search_radio?mpd_port=' + this.settings['mpd_port'] + '&pattern=' + encodeURIComponent(lookfor)).subscribe(data => {
         console.log(data);
         this.stations = data.tree;
+      })
+    }
+    else if(this.bandcamp || lookfor.match(/bandcamp.com\//)){
+      this.http.get<any>(this.servicesBasePath + '/search_bandcamp?mpd_port=' + this.settings['mpd_port'] + '&pattern=' + encodeURIComponent(lookfor)).subscribe(data => {
+        console.log(data);
+        this.openRadioModal(data['tree'][0]['title'], data['tree'][0]['artist'], data['tree'][0]['url'], data['tree'][0]['art'])
       })
     }
 
@@ -459,7 +497,8 @@ export class AppComponent {
 
 
   addDir(addObject){
-    console.log("addDir: " + addObject['dir']);
+    console.log("addDir");
+    console.log(addObject);
     var playparams;
 
     if('url' in addObject && addObject['url'] != ''){
@@ -473,8 +512,14 @@ export class AppComponent {
 
     this.http.get<any>(this.servicesBasePath + '/addplay?mpd_port=' + this.settings['mpd_port'] + '&'+ playparams + '&client_id=' + this.settings['client_id']  ).subscribe(data => {
       console.log("enqueued dir ");
-      this.showSuccess('loaded ' + this.truncate(this.baseName(addObject['dir']), 10))
-
+      
+      if(addObject['dir'] != ''){
+        this.showSuccess('loaded ' + this.truncate(this.baseName(addObject['dir']), 10))
+      }
+      else{
+        this.showSuccess('loaded ' + this.truncate(addObject['url'], 10))
+      }
+      
       if(addObject['url'] == '') this.updateSpec('history'); else this.updateRadioHistory();
 
       this.updateCurrentSong();

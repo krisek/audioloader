@@ -38,6 +38,17 @@ import pyradios
 
 import sys
 
+bandcamp_enabled = True
+
+try:
+    import bandcamp_dl.bandcamp
+    from bandcamp_dl.bandcamp import Bandcamp
+    from bandcamp_dl.bandcampdownloader import BandcampDownloader
+    from bandcamp_dl.__init__ import __version__
+except ImportError:
+    # Handle the absence of the module_name here
+    bandcamp_enabled = False
+
 log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO').upper(), None)
 
 logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
@@ -207,6 +218,7 @@ def poll_currentsong():
     content.update(mpd_client.status())
     content['players'] = get_active_players()
     content['default_stream'] = app.config.get('STREAM_URL', 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain')))
+    content['bandcamp_enabled'] = bandcamp_enabled
 
     return jsonify(process_currentsong(content))
 
@@ -383,11 +395,11 @@ def get_active_players():
         for key in r.scan_iter("upnp:player:*:last_seen"):
             last_seen = float(r.get(key))
             #app.logger.debug("last seen vs now "+ key + "   " + str(last_seen) + '   ' + str(time.time()) + "   " +  str(time.time() - last_seen) )
-            if time.time() - last_seen < 600:
+            if time.time() - last_seen < 7200:
                 data = json.loads(r.get(key.replace('last_seen','data')))
                 players.append(data)
             #if have already all players read let's do some housekeeping here
-            if time.time() - last_seen > 1800:
+            if time.time() - last_seen > 7500:
                 r.delete(key.replace('last_seen','data'))
                 r.delete(key)
     except Exception as e:
@@ -416,6 +428,11 @@ def active_players():
 @app.route('/radio_history', methods=['GET', 'POST'])
 def radio_history():
     client_data = read_data(request.args.get('client_id', ''), 'radio_history')
+    return jsonify(client_data)
+
+@app.route('/bandcamp_history', methods=['GET', 'POST'])
+def bandcamp_history():
+    client_data = read_data(request.args.get('client_id', ''), 'bandcamp_history')
     return jsonify(client_data)
 
 @app.route('/history', methods=['GET', 'POST'])
@@ -493,7 +510,27 @@ def search_radio():
 
     return jsonify(content)
 
+@app.route('/search_bandcamp', methods=['GET', 'POST'])
+def search_bandcamp():
+    content = {}
+    content['tree'] = []
+    pattern = request.args.get('pattern', 'ugar')
+    if len(pattern) < 20 or 'bandcamp.com/' not in pattern or not bandcamp_enabled:
+        return jsonify(content)
+    try:
 
+        # lets get create list of urls for a bandcamp link
+        app.logger.debug('searching for bandcamp album: ' + pattern)
+        bandcamp = Bandcamp()
+        album_list = []
+        album_list.append(bandcamp.parse(pattern, True, False, True)) #art, no lyrics, debug
+        content['tree'] = album_list
+
+    except Exception as e:
+        app.logger.warn('exception on search_bandcamp ' + str(e))
+        app.logger.debug(traceback.format_exc())
+
+    return jsonify(content)
 
 @app.route('/listfiles', methods=['GET', 'POST'])
 @app.route('/lsinfo', methods=['GET', 'POST'])
@@ -582,21 +619,36 @@ def mpd_proxy():
             mpd_client.consume(1)
             #if no directory present let's take radio_uuid and then url
             playable = request.args.get('directory', request.args.get('url', ''))
+            playables = []
+
             if request.args.get('stationuud', '') != '' and playable == '':
                 #do resolve radio url
                 rb = pyradios.RadioBrowser()
                 station = rb.station_by_uuid(request['args']['stationuuid'])
                 playable = station['url']
+            
+            if bandcamp_enabled and 'bandcamp.com' in playable:
+                # lets get create list of urls for a bandcamp link
+                bandcamp = Bandcamp()
+                album_list = []
+                album_list.append(bandcamp.parse(playable, True, False, True)) #art, no lyrics, debug
+                for album in album_list:
+                    for track in album['tracks']:
+                        playables.append(track['url'])
+
             try:
-                if(request.args.get('directory', '') != ''):
+                if request.args.get('directory', '') != '' or len(playables) > 0:
                     mpd_client.add('signal.mp3')
             except Exception as e:
                 app.logger.info('signal.mp3 was not queued, music will start immediately')
                 app.logger.debug(traceback.format_exc())
 
-
-
-            content = mpd_client.add(playable)
+            if len(playables) == 0:
+                content = mpd_client.add(playable)
+            else:
+                for elem in playables:
+                    content = mpd_client.add(elem)
+            
             content = mpd_client.play()
 
             client_id = request.args.get('client_id', '')
@@ -618,7 +670,7 @@ def mpd_proxy():
                     #write back the file
                     with open(client_history_file, 'w') as ch:
                         ch.write(json.dumps(client_history))
-            if(re.search(r'^https{0,1}://', playable) and request.args.get('stationuuid', '') != ''):
+            if(re.search(r'^https{0,1}://', playable) and request.args.get('stationuuid', '') != '' and 'bandcamp.com' not in playable):
                 #manage radiohistory
                 stationuuid = request.args['stationuuid']
                 client_history = read_data(client_id, 'radio_history')
@@ -642,7 +694,31 @@ def mpd_proxy():
                     #write back the file
                     with open(client_history_file, 'w') as ch:
                         ch.write(json.dumps(client_history))
+            if bandcamp_enabled and 'bandcamp.com' in playable:
+                #manage bandcamp history
+                client_history = read_data(client_id, 'bandcamp_history')
+                if 'links' not in client_history:
+                    client_history['links'] = {}
 
+                if playable in client_history['bandcamp_history']:
+                    client_history['bandcamp_history'].remove(playable)
+
+                client_history['bandcamp_history'].append(playable)
+                client_history['bandcamp_history'] = client_history['bandcamp_history'][-20:]
+                client_history['links'][playable] = {
+                    'url': playable,
+                    'favicon': album_list[0].get('art', ''),
+                    'title': album_list[0].get('title', ''),
+                    'artist': album_list[0].get('artist', ''),
+                    'date': album_list[0].get('date', '')
+                }
+
+                client_history_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.bandcamp_history.json')
+
+                if client_id != '' and client_history_file.startswith(app.config['CLIENT_DB']) and re.search(r'[^A-Za-z0-9_\-\.]', client_history_file):
+                    #write back the file
+                    with open(client_history_file, 'w') as ch:
+                        ch.write(json.dumps(client_history))
 
         elif(request.path == '/play'):
             content = mpd_client.play()
@@ -668,6 +744,7 @@ def mpd_proxy():
             content = mpd_client.currentsong()
             content.update(mpd_client.status())
             content['players'] = get_active_players()
+            content['bandcamp_enabled'] = bandcamp_enabled
             content['default_stream'] = app.config.get('STREAM_URL', 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain')))
             content = process_currentsong(content)
         mpd_client.disconnect()

@@ -68,7 +68,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container flex-parent">
         <a href="#" class="navbar-brand" (click)="showDir(dir)">
-            <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="folders">folder_open</mat-icon>
+            <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="folders">library_music</mat-icon>
         </a>
         <a href="#" class="navbar-brand" (click)="showDash()">
             <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="dashboard">dashboard</mat-icon>
@@ -76,7 +76,9 @@
         <a href="#" class="navbar-brand" (click)="showRadio()">
             <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="radio">hvac</mat-icon>
         </a>
-
+        <a href="#" *ngIf="bandcamp_enabled" class="navbar-brand" (click)="showBandcamp()">
+            <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="bandcamp">music_note</mat-icon>
+        </a>
         <div class="navbar-brand flex-child long-and-truncated" ng-class="{'long': (currentsong['title_short'].length > 15), 'verylong': (currentsong['title_short'].length > 25)}" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong(true)">
             <div class="long-and-truncated" style="font-size: 1rem; line-height:1.2rem;">{{ currentsong['display_title_top'] }}</div>
             <div class="long-and-truncated" style="font-size: 1.1rem;">{{ currentsong['title_short'] }}</div>
@@ -138,7 +140,10 @@
                 </a>
 
 
-                <input class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="{{ radio ?  'search station...' : 'search...'}}" name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target['value']; searchItem($event.target['value'])" onfocus="this.select();" onmouseup="return false;">
+                <input *ngIf="dash || radio || dirbrowser" class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="{{ radio ?  'search station...' : 'search...'}}" name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target['value']; searchItem($event.target['value'])" onfocus="this.select();" onmouseup="return false;">
+
+                
+                <input *ngIf="bandcamp && bandcamp_enabled && !dash" class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="play album url..." name="lookfor" #lookforbox [value]="lookfor" (change)="lookfor = $event.target['value']; searchItem($event.target['value'])" onfocus="this.select();" onmouseup="return false;">
 
                 <a href="#" class="nav-item nav-link">
                     <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="settings" (click)="openSettings()">settings</mat-icon>
@@ -274,6 +279,26 @@
 
 
 
+
+
+                    </ng-container>
+                    <ng-container *ngIf="bandcamp && bandcamp_enabled">
+
+                        <div class="album-cover inline-block" *ngFor="let elem of bandcamp_history['bandcamp_history']">
+                            <div class="outer_shadow">
+                                <div class="album-cover-frame">
+                                    <img src="{{ bandcamp_history['links'][elem]['favicon'] }}" title="{{ bandcamp_history['links'][elem]['artist'] }} - {{ bandcamp_history['links'][elem]['date'] }} - {{ bandcamp_history['links'][elem]['title'] }}" class="album-cover-img" type="button" data-toggle="modal" data-target="#exampleModal" (click)="openRadioModal(bandcamp_history['links'][elem]['title'], bandcamp_history['links'][elem]['artist'], bandcamp_history['links'][elem]['url'], bandcamp_history['links'][elem]['favicon'])" />
+                                </div>
+                                <div class="album-title">
+                                    <span class="albumlink">
+                                        <a href="#" class="play" (click)="openRadioModal(bandcamp_history['links'][elem]['title'], bandcamp_history['links'][elem]['artist'], bandcamp_history['links'][elem]['url'], bandcamp_history['links'][elem]['favicon'])" class="albumlink">
+                                            <mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon>
+                                        </a> <a href="#" (click)="openRadioModal(bandcamp_history['links'][elem]['title'], bandcamp_history['links'][elem]['artist'], bandcamp_history['links'][elem]['url'], bandcamp_history['links'][elem]['favicon'])" title="{{ bandcamp_history['links'][elem]['title'] }}" class="albumlink">{{ bandcamp_history['links'][elem]['artist'] }} - {{ bandcamp_history['links'][elem]['date'] }} - {{ bandcamp_history['links'][elem]['title'] }}</a>
+                                    </span>
+                                </div>
+
+                            </div>
+                        </div>
 
 
                     </ng-container>
