@@ -63,7 +63,7 @@ cp config.tpl.py config.py
 In this file you can edit the configuration of the Flask backend.
 
 ```python
-  #serve cover art directly or through a redirect
+  #serve cover art directly (from MUSIC_DIR) or through a redirect (to MUSIC_WWW)
   COVER_RESPONSE_TYPE = 'direct'
 
   #the application will look in this folder for your music repository when it returns cover art
@@ -96,73 +96,27 @@ In this file you can edit the configuration of the Flask backend.
 
 5. Web server
 
-uWSGI can run the application directly without any web server needed. This is a viable method if you don't want to expose the application to external networks and you don't have many clients. If uWSGI serves directly the Flask backend, static cover art needs to be served by the backend; you need to set a MUSIC_DIR in the config, which tells the server where to look for cover art. (MPD can give you only a file list, but doesn't serve files: the Flask app figures out the cover art filename from the file list given by MPD, and cover file needs to be read from the filesystem.)
+The simplest and most portable way to run audioloader is Gunicorn.
 
-If you want to add https or extra protection to the application, you can install a web server to proxy towards uWSGI. An example Nginx virtual host configuration is included in the repository. If you are willing to expose your music library on this web server, you can configure the application to redirect the client to download cover art — this might be less resource intensive as serving the files through the Flack app directly. (Your mileage might vary.)
+```bash
+pip install gunicorn
+```
 
-By default you don't have to configure anything else but the directory for your music library and the application will serve cover arts directly.
+If Gunicorn serves directly the Flask backend, static cover art needs to be served by the backend; you need to set a MUSIC_DIR in the config and set `COVER_RESPONSE_TYPE=direct`.
+
+If you want to add https or extra protection to the application, you can install a web server to proxy towards Gunicorn. An example Nginx virtual host configuration is included in the repository. If you are willing to expose your music library on this web server, you can configure the application to redirect the client to download cover art — this might be less resource intensive as serving the files through the Flack app directly. Your mileage might vary - I use `direct` setting nowadays on an RPi4 and it is all good, hence `COVER_RESPONSE_TYPE = direct` is the default.
 
 6. Startup
 
+
+```bash
+gunicorn --workers 12 --max-requests 300  --bnd 0.0.0.0:3400  --timeout 1800 --chdir . wsgi:application
+```
+
 Two scripts are included in the repository.
-
-`start-u.sh` starts the uwsgi server directly.
-
-`start-uwsgi.sh` starts the uwsgi server as per the app.ini file included in the repository. This script can be used in systemd units as well. An example systemd unit file is in the repository. (Don't forget to adopt, User, Group and ExecStart.)
 
 If you want to enable UPnP discovery, start the `disover.py` script as well, it requires two parameters: -m the IP address of the audioloader host and -n the local subnet. (This might be enhanced in later releases.) An example systemd unit file is included as well.
 
-## Install from container (experimental)
-
-I use `podman` on my Rpi, but `docker` should work the same.
-
-1. Download and configure `config.py`
-
-```bash
-curl https://raw.githubusercontent.com/krisek/audioloader/master/config.tpl.py -o config.py
-```
-
-Edit `config.py` as you need. Don't forget: the container won't see `mpd` and `Redis` on `localhost`, you will need to set the real IP/resolvable hostname of the respective service there. `MUSIC_DIR` is important this is where you will need to map your actual directory containing your music collection on the system.
-
-2. Run the container
-
-```bash
-export MUSIC_DIR_SERVER=<directory containing your music collection>
-export MUSIC_DIR_AUDIOLOADER=/media/music/mp3 # or the directory you set in config.tpl
-export RELEASE=v0.0.1 # or the one you want to run
-mkdir user_data
-podman run -v $MUSIC_DIR_SERVER:$MUSIC_DIR_AUDIOLOADER -v ./config.py:/var/lib/audioloader/config.py  -v ./user_data:/var/lib/mpf:Z -p 3400:3400/tcp --name audioloader docker.io/krisek11/audioloader:$RELEASE
-```
-
-Podman note: I had to do an 
-```bash
-echo `whoami`:2000000:65535 | sudo tee /etc/subgid 
-echo `whoami`:2000000:65535 | sudo tee /etc/subuid
-``` 
-on my Raspbian to get the container running as rootless user.
-
-In order to get `user_data` writable by the container you either give world write permissions to it (`chmod 777 user_data`) or you need to figure out to which host UID podman maps the container's al(1000) UID.
-
-```bash
-USER_DATA=user_data
-chmod 777 $USER_DATA # temporarly give word permissions to user_data
-podman exec -it audioloader touch /var/lib/mpf/test # change a file in the container
-REAL_UID=$(stat -c '%u' $USER_DATA/test) # check the uid of the created file on the host
-chmod 755 $USER_DATA # remove world permissions from user_data
-sudo setfacl -m u:$REAL_UID:rw  $USER_DATA/* # provide permissions to mapped user
-sudo setfacl -m u:$REAL_UID:rxw $USER_DATA
-setfacl -m d:u:$REAL_UID:rwx $USER_DATA
-rm -f $USER_DATA/test
-# cross fingers $REAL_UID won't be changed by podman
-```
-
-3. Web server
-
-See (5.) in manual installation.
-
-4. Startup
-
-TBD
 
 ## You've been warned
 
@@ -226,12 +180,12 @@ If UPnP discovery is enabled you need to turn on UPnP on Kodi as well, otherwise
 apt update
 apt install -y git
 cd /opt
-tar zxvf /downloads/node-v18.12.1-linux-x64.tar.gz 
+sudo tar xvf /downloads/node-v18.17.1-linux-x64.tar.xz 
 cd /usr/local/bin/
-ln -s /opt/node-v18.12.1-linux-x64/bin/{corepack,node,npm,npx} .
-npm install --global yarn
-npm install -g @angular/cli
-ln -s /opt/node-v18.12.1-linux-x64/bin/{ng,yarn,yarnpkg} .
+sudo ln -s /opt/node-v18.17.1-linux-x64/bin/{corepack,node,npm,npx} .
+sudo npm install --global yarn
+sudo npm install -g @angular/cli
+sudo ln -s /opt/node-v18.17.1-linux-x64/bin/{ng,yarn,yarnpkg} .
 cd /projects/audioloader/angular/audioloader
 yarn install
 yarn upgrade
