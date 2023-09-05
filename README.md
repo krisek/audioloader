@@ -4,11 +4,11 @@ Audioloader is a web based [Music Player Deamon](http://www.musicpd.org) (MPD) c
 
 [![Screenshot](https://i.postimg.cc/fyCT7vS9/Screenshot-from-2020-04-26-16-03-24.png)](https://postimg.cc/fS3NDmKz)
 
-The software has three components: a Flask/Python based backend, an Angular/Bootstrap based, responsive web user interface and and optional disovery daemon which discovers UPnP media renderers on the local network.
+The software has three components: a Flask/Python based backend, an Angular/Bootstrap based, responsive web user interface and and optional discovery daemon which discovers UPnP media renderers on the local network.
 
 The Flask application is very thin, it does almost nothing but proxying requests towards the MPD server from the web client.
 
-The application features five ways of selecting music from MPD:
+The application features six ways of selecting music from MPD and other sources:
 
 1. selecting folders from a browser
 1. searching in the MPD database
@@ -16,19 +16,18 @@ The application features five ways of selecting music from MPD:
 1. selecting folders from the history
 1. marking folders as favorite
 1. select radio station from the [radio-browser.info](http://radio-browser.info) community radio database
+1. play album from Bandcamp (optional) 
 
 
 The Flask application runs on the same system where you run MPD. You can configure any supported output method on MPD; a very common use case is to install the application on a Raspberry Pi (or home server), configure MPD with HTTP stream output, so that you can stream music from all of your devices.
 
-If you configure the MPD server with a HTTP stream output, the application can load this stream to a Kodi server or the UPnP media renderers discovered, so that you can listen music on your Kodi or UPnP connected sound system. Don't forget to configure the STREAM_URL parameter in config.py or in the 'stream from' parameter in the8 settings menu of the web UI.
+If you configure the MPD server with a HTTP stream output, the application can load this stream to UPnP media renderers discovered on your network. ⚠ Don't forget to configure the STREAM_URL parameter in config.py or in the 'stream from' parameter in the settings menu of the web UI. UPnP device discovery is performed by a separate script.
 
 # Installation
 
 ## Install from repository
 
 I detail here how to install the application on Debian/Ubuntu derivatives, but you can get it running wherever Python and Pip are available.
-
-NOTE: the Angular assets are pre-built and part of the repository, you just need to deploy and configure Flask
 
 1. Install base packages
 
@@ -81,7 +80,7 @@ In this file you can edit the configuration of the Flask backend.
   LOG_LEVEL = 'info'
 
   #hostname of default kodi server to load music to
-  KODI = 'kodi.localdomain'
+  # KODI = 'kodi.localdomain'
 
   #url of the mpd lame/vorbis stream (httpd output) configured ~ can be overriden from the web UI settings
   STREAM_URL = 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain'))
@@ -104,10 +103,18 @@ pip install gunicorn
 
 If Gunicorn serves directly the Flask backend, static cover art needs to be served by the backend; you need to set a MUSIC_DIR in the config and set `COVER_RESPONSE_TYPE=direct`.
 
-If you want to add https or extra protection to the application, you can install a web server to proxy towards Gunicorn. An example Nginx virtual host configuration is included in the repository. If you are willing to expose your music library on this web server, you can configure the application to redirect the client to download cover art — this might be less resource intensive as serving the files through the Flack app directly. Your mileage might vary - I use `direct` setting nowadays on an RPi4 and it is all good, hence `COVER_RESPONSE_TYPE = direct` is the default.
+If you want to add https or extra protection to the application, you can install a web server to proxy towards Gunicorn. An example Nginx virtual host configuration is included in the repository. If you are willing to expose your music library on this web server, you can configure the application to redirect the client to download cover art — this might be less resource intensive as serving the files through the Flack app directly. Your mileage might vary - I use `direct` setting nowadays on an RPi4 and it is all good, hence `COVER_RESPONSE_TYPE = direct` is the default configuration setting.
 
-6. Startup
 
+6. Bandcamp support
+
+You can enable the optional Bandcamp support by installing the bandcamp-downloader package. 
+
+```bash
+pip install bandcamp-downloader
+```
+
+7. Startup
 
 ```bash
 gunicorn --workers 12 --max-requests 300  --bnd 0.0.0.0:3400  --timeout 1800 --chdir . wsgi:application
@@ -131,22 +138,20 @@ Audioloader is distributed in this Git repository. New features are developed ag
 If you run the application with standalone uWSGI, you just need to visit http://localhost:5000 after starting it.
 
 ## Navigation bar
-The first icon on the left side opens the directory view. The second opens the dash (which is the default view). The third one opens the radio stations view. In the middle you see the title of the currently playing song and the various media controls (if there's anything playing). On the left side you see a search bar: it needs minimum four characters to start searching.
+The first icon on the left side opens the directory view. The second opens the dash (which is the default view). The third one opens the radio stations view. The optional fourth one shows your Bandcamp history. In the middle you see the title of the currently playing song and the various media controls (if there's anything playing). On the left side you see a search bar: it needs minimum four characters to start searching.
 
 ### Settings
 The gear button opens the settings dialog.
 
 MPD port: this is where you can set what port the Flask application should use to connect to the MPD server. (Tip: if you have a family, you can set up separate MPD server for everybody — it's not complicated.)
 
-Stream from: If you plan to use Kodi to consume the stream from the MPD server, where this stream is located
+Stream from: If you plan to stream from the MPD server, where this stream is located
 
 Client: your id, this identifies your history / random album selection and favorites on the server, so that you can use the application from several devices
 
-Kodi hostname: where is your Kodi server accessible on the network. The application uses JSONRPC calls, you might need to enable it on Kodi
+Kodi hostname: where is your Kodi server accessible on the network. The application uses JSONRPC calls, you might need to enable it on Kodi (deprecated)
 
 Log level: not relevant (only debug is supported for the time being)
-
-Most of the settings work out of the box, though it makes sense to set a client id, and obviously for Kodi related settings there is no default, this is something you need to figure out yourself.
 
 ## Music selection
 The directory browser speaks for itself.
@@ -161,13 +166,12 @@ If you mark a folder as favorite it will be listed in the bottom of the dash. Yo
 
 The radio station view let's you search and load radio stations for the [radio-browser.info](http://radio-browser.info) community radio database. The last 10 started station is displayed in the radio station history.
 
+You can paste Bandcamp album URL's in the search box on the dash and the Bandcamp view, this offers you the possibility to play albums directly from Bandcamp.
+
 ## UPnP
 
 UPnP media renderers available on the network are monitored by the `discover.py` daemon. This application listens to the traffic in the UPnP multicast group and if a new device appears, it registers the device's capabilities. Audioloader offers rendering on devices which have been seen on the network in the last 10 minutes. (Consequently, if you turn off a device it won't immediately disappear from Audioloader.) When you turn on a UPnP device it might take some time until `discover.py` finds it, depending on how chatty the device is on UPnP. (In order not to miss anything, `discover.py` initiates full UPnP discovery regularly.)
 
-### Kodi & UPnP
-
-If UPnP discovery is enabled you need to turn on UPnP on Kodi as well, otherwise the interface won't offer playing music on Kodi.
 
 # TODO / ISSUES
 
