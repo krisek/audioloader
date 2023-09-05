@@ -63,6 +63,13 @@
         height: 1px !important;
         background-color: inherit !important;
     }
+
+    .navbar-icon-control {
+        margin-left: 0.7em;
+    }
+    .navbar-icon-control-2 {
+        margin-left: 0.6em;
+    }
 </style>
 
 <nav class="navbar navbar-expand-lg navbar-dark">
@@ -77,7 +84,7 @@
             <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="radio">hvac</mat-icon>
         </a>
         <a href="#" *ngIf="bandcamp_enabled" class="navbar-brand" (click)="showBandcamp()">
-            <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="bandcamp">music_note</mat-icon>
+            <svg style="width: 22px; height: 22px;" aria-hidden="false" aria-label="fav" class="navbar-icon " title="bandcamp" fill="#ffffff" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 97.75 97.75" xml:space="preserve" stroke="#ffffff"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M48.875,0C21.882,0,0,21.882,0,48.875S21.882,97.75,48.875,97.75S97.75,75.868,97.75,48.875S75.868,0,48.875,0z M64.835,70.857H12.593l20.32-43.965h52.244L64.835,70.857z"></path> </g> </g></svg>                
         </a>
         <div class="navbar-brand flex-child long-and-truncated" ng-class="{'long': (currentsong['title_short'].length > 15), 'verylong': (currentsong['title_short'].length > 25)}" [@loadingTrigger]="loading['currentsong'] ? 'loading' : 'normal'" title="{{ currentsong['artist'] }} - {{ currentsong['album'] }} ({{currentsong['track']}}) {{ currentsong['title'] }}" (click)="updateCurrentSong(true)">
             <div class="long-and-truncated" style="font-size: 1rem; line-height:1.2rem;">{{ currentsong['display_title_top'] }}</div>
@@ -96,15 +103,7 @@
         <div class="collapse navbar-collapse" [ngClass]="{ 'show': isMenuOpen }">
             <form class="form-inline my-2 my-lg-0 ml-auto">
 
-                <a href="#" (click)="openStream(0)" class="nav-item nav-link" *ngIf="currentsong['active'] && ! streamplayers">
-                    <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream to kodi" [@loadingTrigger]="loading['kodiload'] ? 'loading' : 'normal'">queue_music</mat-icon>
-                </a>
-
-                <a href="#" (click)="stopStream(0)" class="nav-item nav-link" *ngIf="currentsong['active']  && ! streamplayers">
-                    <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop stream on kodi" [@loadingTrigger]="loading['kodistop'] ? 'loading' : 'normal'">remove_from_queue</mat-icon>
-                </a>
-
-                <div ngbDropdown class="nav-item" *ngIf="streamplayers && currentsong['active']">
+                <div ngbDropdown class="nav-item" *ngIf="currentsong['active']" style="padding-right: 0.7em;">
                     <a href="#" (click)="false" class="nav-link" ngbDropdownToggle>
                         <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream">queue_music</mat-icon>
                     </a>
@@ -112,8 +111,7 @@
                         <a *ngFor="let player of currentsong.players; index as i; " href="#" class="dropdown-item" (click)="openStream(i)">{{ player.name  }}</a>
                     </div>
                 </div>
-
-                <div ngbDropdown class="nav-item" *ngIf="streamplayers  && currentsong['active']">
+                <div ngbDropdown class="nav-item" *ngIf="currentsong['active']" style="padding-right: 0.7em;">
                     <a href="#" (click)="false" class="nav-link" ngbDropdownToggle>
                         <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream">remove_from_queue</mat-icon>
                     </a>
@@ -121,29 +119,21 @@
                         <a *ngFor="let player of currentsong.players; index as i; " href="#" class="dropdown-item" (click)="stopStream(i)">{{ player.name  }}</a>
                     </div>
                 </div>
-
-
-                <a href="#" class="nav-item nav-link" *ngIf="currentsong['next_state']" (click)="sendCommand(currentsong['next_state'])">
+                <a href="#" class="nav-item nav-link" *ngIf="currentsong['next_state']" (click)="sendCommand(currentsong['next_state'])" style="padding-right: 0.7em;">
                     <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="{{ currentsong['next_title'] }}">{{ currentsong['next_icon'] }}</mat-icon>
                 </a>
-
-                <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('stop')">
+                <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('stop')" style="padding-right: 0.7em;">
                     <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="stop" [@loadingTrigger]="loading['stop'] ? 'loading' : 'normal'">stop</mat-icon>
                 </a>
-
-                <a href="#" class="nav-item nav-link" *ngIf="!currentsong['consume']" (click)="sendCommand('prev')">
+                <a href="#" class="nav-item nav-link" *ngIf="!currentsong['consume']" (click)="sendCommand('prev')" style="padding-right: 0.7em;">
                     <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="prev" [@loadingTrigger]="loading['prev'] ? 'loading' : 'normal'">fast_rewind</mat-icon>
                 </a>
-
-                <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('next')">
+                <a href="#" class="nav-item nav-link" *ngIf="currentsong['active']" (click)="sendCommand('next')" style="padding-right: 0.7em;">
                     <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="next" [@loadingTrigger]="loading['next'] ? 'loading' : 'normal'">fast_forward</mat-icon>
                 </a>
+                <input *ngIf="dash || radio || dirbrowser" class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="{{ radio ?  'search station...' : 'search...'}}" name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target['value']; searchItem($event.target['value'])" onfocus="this.select();" onmouseup="return false;" style="margin-right: 1em;">
 
-
-                <input *ngIf="dash || radio || dirbrowser" class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="{{ radio ?  'search station...' : 'search...'}}" name="lookfor" #lookforbox [value]="lookfor" (input)="lookfor = $event.target['value']; searchItem($event.target['value'])" onfocus="this.select();" onmouseup="return false;">
-
-                
-                <input *ngIf="bandcamp && bandcamp_enabled && !dash" class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="play album url..." name="lookfor" #lookforbox [value]="lookfor" (change)="lookfor = $event.target['value']; searchItem($event.target['value'])" onfocus="this.select();" onmouseup="return false;">
+                <input *ngIf="bandcamp && bandcamp_enabled && !dash" class="form-control mr-sm-2" type="search" aria-label="Search" placeholder="play album url..." name="lookfor" #lookforbox [value]="lookfor" (change)="lookfor = $event.target['value']; searchItem($event.target['value'])" onfocus="this.select();" onmouseup="return false;" style="margin-right: 1em;">
 
                 <a href="#" class="nav-item nav-link">
                     <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="settings" (click)="openSettings()">settings</mat-icon>
