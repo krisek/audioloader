@@ -395,11 +395,11 @@ def get_active_players():
         for key in r.scan_iter("upnp:player:*:last_seen"):
             last_seen = float(r.get(key))
             #app.logger.debug("last seen vs now "+ key + "   " + str(last_seen) + '   ' + str(time.time()) + "   " +  str(time.time() - last_seen) )
-            if time.time() - last_seen < 7200:
+            if time.time() - last_seen < 900:
                 data = json.loads(r.get(key.replace('last_seen','data')))
                 players.append(data)
             #if have already all players read let's do some housekeeping here
-            if time.time() - last_seen > 7500:
+            if time.time() - last_seen > 1200:
                 r.delete(key.replace('last_seen','data'))
                 r.delete(key)
     except Exception as e:
