@@ -1,5 +1,5 @@
     <div class="modal-header" id="addPopup">
-      <h5 style="text-align: center;" class="modal-title">Play {{name}}?</h5>
+      <h5 style="text-align: center;" class="modal-title">{{action}} {{name}}?</h5>
 
     </div>
     <div class="modal-body">
@@ -7,7 +7,7 @@
       <img *ngIf="favicon" src="{{ favicon }}" height="128" style="border-radius: 5px;" class="album-cover-img"/>
       </p>
 
-      <p style="text-align: center;">
+      <p style="text-align: center;" *ngIf="action === 'Play'">
       <span *ngFor="let player of players"><mat-slide-toggle [checked]="!!player.load" (change)="updateLoad($event, player.location)">{{ player.name }}</mat-slide-toggle>&nbsp;&nbsp;</span></p>
 
     </div>

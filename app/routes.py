@@ -49,6 +49,14 @@ except ImportError:
     # Handle the absence of the module_name here
     bandcamp_enabled = False
 
+
+youtube_enabled = True
+
+try:
+    import yt_dlp
+except ImportError:
+    youtube_enabled = False
+
 log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO').upper(), None)
 
 logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
@@ -64,6 +72,68 @@ def mpd_wrap(command, *args, **kwargs):
         mpd_client.connect(app.config.get('MPD_HOST', 'localhost'), int(request.args.get('mpd_port', '6600')))
     finally:
         return command(*args, **kwargs)
+
+
+ydl_opts = {
+    'format': 'bestaudio',
+    'lazy_playlist': True,
+}
+
+preferred_formats = {'141': 1, '171': 2, '140': 3, '250': 4, '249': 5, '139': 6} #'251': 0, 
+
+
+def process_yt_entry(info):
+    urls = {}
+
+    for format in info['formats']:
+        if re.search('audio only', format['format']):
+            # print(format['format_id'] + "   " + format['ext'] + "  " + format['format'])
+            if format['format_id'] in preferred_formats:
+
+                urls[preferred_formats[format['format_id']]] = format['url']
+            else:
+                try:
+                    urls[int(format['format_id'])] = format['url']
+                except:
+                    pass    
+
+    url = ""
+    for key in sorted(urls):
+        # print(key)
+        url = urls[key]
+        break
+    return url
+
+def process_yt_playable(url):
+    playables = []
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(
+            url , download=False)
+        print(info['title'])
+        art = ""
+        preferred_art_formats = {'/mqdefault.': {'pref': 1}, '/hqdefault.': {'pref': 2}, '/default.': {'pref': 3}}
+        for thumbnail in info['thumbnails']:
+            # print(thumbnail)
+            #print(thumbnail['url'])
+            for art_format in preferred_art_formats:
+                #print(art_format)
+                if art_format in thumbnail['url']:
+                    #print('match')
+                    preferred_art_formats[art_format]['url'] = thumbnail['url']
+            
+        for art_format in preferred_art_formats:
+            if 'url' in preferred_art_formats[art_format]:
+                art = preferred_art_formats[art_format]['url']
+                break
+        
+        # print(info)
+        for entry in info.get('entries', []):
+            playables.append(process_yt_entry(entry))
+        if 'formats' in info:
+            playables.append(process_yt_entry(info))
+
+        return info['title'], art, playables
 
 
 @app.route('/cover', methods=['GET', 'POST'])
@@ -501,7 +571,11 @@ def search_radio():
         rb = pyradios.RadioBrowser()
         app.logger.debug('searching for radio: ' + pattern)
         content['tree'] = rb.search(name=pattern, name_exact=False)
-
+        content_tree = []
+        for station in content['tree']:
+            if station.get('favicon', '') == '':
+                station['favicon'] = 'assets/radio.png'
+            content_tree.append(station)
         content['tree'] = list(filter(lambda elem: elem['name'] != '' and (elem['bitrate'] > 60 or elem['bitrate'] == 0), content['tree']))
 
     except Exception as e:
@@ -510,27 +584,74 @@ def search_radio():
 
     return jsonify(content)
 
+# bandcamp search is not a real search, it is merely retrieves metadata to present a popup on frontend side
 @app.route('/search_bandcamp', methods=['GET', 'POST'])
 def search_bandcamp():
     content = {}
     content['tree'] = []
     pattern = request.args.get('pattern', 'ugar')
-    if len(pattern) < 20 or 'bandcamp.com/' not in pattern or not bandcamp_enabled:
+    if len(pattern) < 20 or not ('bandcamp.com/' in pattern or 'youtube' in pattern or 'youtu.be' in pattern):
         return jsonify(content)
-    try:
+   
+    if 'bandcamp.com' in pattern:
+        try:
+            # lets get create list of urls for a bandcamp link
+            app.logger.debug('searching for bandcamp album: ' + pattern)
+            bandcamp = Bandcamp()
+            album_list = []
+            album_list.append(bandcamp.parse(pattern, True, False, True)) #art, no lyrics, debug
+            content['tree'] = album_list
 
-        # lets get create list of urls for a bandcamp link
-        app.logger.debug('searching for bandcamp album: ' + pattern)
-        bandcamp = Bandcamp()
-        album_list = []
-        album_list.append(bandcamp.parse(pattern, True, False, True)) #art, no lyrics, debug
-        content['tree'] = album_list
+        except Exception as e:
+            app.logger.warn('exception on search_bandcamp ' + str(e))
+            app.logger.debug(traceback.format_exc())
+    if 'youtube' in pattern or 'youtu.be' in pattern:
+        # there is no easy way to get informtion on url so we'll be blank here
+        app.logger.debug('returning youtube link: ' + pattern)
+        content['tree'].append({
+            'url': pattern,
+            'title': pattern,
+            'year': '',
+            'art': 'https://i.ytimg.com/vi_webp/VbChrk8Vs64/mqdefault.webp',
+            'artist': ''
+        })
 
-    except Exception as e:
-        app.logger.warn('exception on search_bandcamp ' + str(e))
-        app.logger.debug(traceback.format_exc())
 
     return jsonify(content)
+
+@app.route('/remove_history', methods=['GET', 'POST'])
+def remove_history():
+    #manage bandcamp/radio history
+    playable = request.args.get('directory', request.args.get('url', ''))
+    station_uuid = request.args.get('station_uuid', '')
+    if station_uuid != '':
+        history = 'radio_history'
+    elif 'http' in playable: 
+        history = 'bandcamp_history'
+    else:
+        history = 'history'
+    
+    client_id = request.args.get('client_id', 'guest')
+
+    client_history = read_data(client_id, history)
+
+    if 'links' not in client_history:
+        client_history['links'] = {}
+    elif playable in client_history['links']:
+        del(client_history['links'][playable])
+
+    if playable in client_history[history]:
+        client_history[history].remove(playable)
+        
+
+    client_history_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.' + history + '.json')
+
+    if client_id != '' and client_history_file.startswith(app.config['CLIENT_DB']) and re.search(r'[^A-Za-z0-9_\-\.]', client_history_file):
+        #write back the file
+        with open(client_history_file, 'w') as ch:
+            ch.write(json.dumps(client_history, indent=4))
+    return jsonify({'result': 'ok'})
+
 
 @app.route('/listfiles', methods=['GET', 'POST'])
 @app.route('/lsinfo', methods=['GET', 'POST'])
@@ -620,6 +741,11 @@ def mpd_proxy():
             #if no directory present let's take radio_uuid and then url
             playable = request.args.get('directory', request.args.get('url', ''))
             playables = []
+            bandcamp_playable = False
+            bandcamp_playable = True if bandcamp_enabled and 'bandcamp.com' in playable else False
+            youtube_playable = False
+            youtube_playable = True if youtube_enabled and ('youtube' in playable or 'youtu.be' in playable) else False
+
 
             if request.args.get('stationuud', '') != '' and playable == '':
                 #do resolve radio url
@@ -627,7 +753,7 @@ def mpd_proxy():
                 station = rb.station_by_uuid(request['args']['stationuuid'])
                 playable = station['url']
             
-            if bandcamp_enabled and 'bandcamp.com' in playable:
+            if bandcamp_playable:
                 # lets get create list of urls for a bandcamp link
                 bandcamp = Bandcamp()
                 album_list = []
@@ -635,6 +761,10 @@ def mpd_proxy():
                 for album in album_list:
                     for track in album['tracks']:
                         playables.append(track['url'])
+            if youtube_playable:
+                # lets get create list of urls for a bandcamp link
+                (yt_title, yt_art, playables) = process_yt_playable(playable)
+
 
             try:
                 if request.args.get('directory', '') != '' or len(playables) > 0:
@@ -670,7 +800,11 @@ def mpd_proxy():
                     #write back the file
                     with open(client_history_file, 'w') as ch:
                         ch.write(json.dumps(client_history))
-            if(re.search(r'^https{0,1}://', playable) and request.args.get('stationuuid', '') != '' and 'bandcamp.com' not in playable):
+            if(re.search(r'^https{0,1}://', playable) 
+                and request.args.get('stationuuid', '') != '' 
+                    and 'bandcamp.com' not in playable
+                        and 'youtube' not in playable
+                            and 'youtu.be' not in playable):
                 #manage radiohistory
                 stationuuid = request.args['stationuuid']
                 client_history = read_data(client_id, 'radio_history')
@@ -694,7 +828,7 @@ def mpd_proxy():
                     #write back the file
                     with open(client_history_file, 'w') as ch:
                         ch.write(json.dumps(client_history))
-            if bandcamp_enabled and 'bandcamp.com' in playable:
+            if (bandcamp_playable or youtube_playable):
                 #manage bandcamp history
                 client_history = read_data(client_id, 'bandcamp_history')
                 if 'links' not in client_history:
@@ -705,14 +839,20 @@ def mpd_proxy():
 
                 client_history['bandcamp_history'].append(playable)
                 client_history['bandcamp_history'] = client_history['bandcamp_history'][-20:]
-                client_history['links'][playable] = {
-                    'url': playable,
-                    'favicon': album_list[0].get('art', ''),
-                    'title': album_list[0].get('title', ''),
-                    'artist': album_list[0].get('artist', ''),
-                    'date': album_list[0].get('date', '')
-                }
-
+                if 'bandcamp.com' in playable:
+                    client_history['links'][playable] = {
+                        'url': playable,
+                        'favicon': album_list[0].get('art', ''),
+                        'title': album_list[0].get('title', ''),
+                        'artist': album_list[0].get('artist', ''),
+                        'date': album_list[0].get('date', '')
+                    }
+                else:
+                    client_history['links'][playable] = {
+                        'url': playable,
+                        'favicon': yt_art,
+                        'title': yt_title,
+                    }
                 client_history_file =  os.path.normpath(app.config['CLIENT_DB'] + '/' + client_id + '.bandcamp_history.json')
 
                 if client_id != '' and client_history_file.startswith(app.config['CLIENT_DB']) and re.search(r'[^A-Za-z0-9_\-\.]', client_history_file):

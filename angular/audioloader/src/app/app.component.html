@@ -246,7 +246,11 @@
                                     <span class="albumlink">
                                         <a href="#" class="play" (click)="openRadioModal(radio_history['stations'][elem]['name'], radio_history['stations'][elem]['stationuuid'], radio_history['stations'][elem]['url'], radio_history['stations'][elem]['favicon'])" class="albumlink">
                                             <mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon>
-                                        </a> <a href="#" (click)="openRadioModal(radio_history['stations'][elem]['name'], radio_history['stations'][elem]['stationuuid'], radio_history['stations'][elem]['url'], radio_history['stations'][elem]['favicon'])" title="{{ radio_history['stations'][elem]['name'] }}" class="albumlink">{{ radio_history['stations'][elem]['name'] }}</a>
+                                        </a> 
+                                        <a href="#" class="play" (click)="openHistoryRemoveModal(radio_history['stations'][elem]['name'], radio_history['stations'][elem]['stationuuid'], radio_history['stations'][elem]['url'], radio_history['stations'][elem]['favicon'])" class="albumlink">
+                                            <mat-icon aria-hidden="false" aria-label="fav" class="dash-icon delete">remove_selection</mat-icon>
+                                        </a> 
+                                        <a href="#" (click)="openRadioModal(radio_history['stations'][elem]['name'], radio_history['stations'][elem]['stationuuid'], radio_history['stations'][elem]['url'], radio_history['stations'][elem]['favicon'])" title="{{ radio_history['stations'][elem]['name'] }}" class="albumlink">{{ radio_history['stations'][elem]['name'] }}</a>
                                     </span>
                                 </div>
 
@@ -283,7 +287,12 @@
                                     <span class="albumlink">
                                         <a href="#" class="play" (click)="openRadioModal(bandcamp_history['links'][elem]['title'], bandcamp_history['links'][elem]['artist'], bandcamp_history['links'][elem]['url'], bandcamp_history['links'][elem]['favicon'])" class="albumlink">
                                             <mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon>
-                                        </a> <a href="#" (click)="openRadioModal(bandcamp_history['links'][elem]['title'], bandcamp_history['links'][elem]['artist'], bandcamp_history['links'][elem]['url'], bandcamp_history['links'][elem]['favicon'])" title="{{ bandcamp_history['links'][elem]['title'] }}" class="albumlink">{{ bandcamp_history['links'][elem]['artist'] }} - {{ bandcamp_history['links'][elem]['date'] }} - {{ bandcamp_history['links'][elem]['title'] }}</a>
+                                        </a> 
+                                        <a href="#" class="play" (click)="openHistoryRemoveModal(bandcamp_history['links'][elem]['title'], bandcamp_history['links'][elem]['artist'], bandcamp_history['links'][elem]['url'], bandcamp_history['links'][elem]['favicon'])" class="albumlink">
+                                            <mat-icon aria-hidden="false" aria-label="fav" class="dash-icon delete">remove_selection</mat-icon>
+                                        </a> 
+                                        
+                                        <a href="#" (click)="openRadioModal(bandcamp_history['links'][elem]['title'], bandcamp_history['links'][elem]['artist'], bandcamp_history['links'][elem]['url'], bandcamp_history['links'][elem]['favicon'])" title="{{ bandcamp_history['links'][elem]['title'] }}" class="albumlink">{{ bandcamp_history['links'][elem]['artist'] }}<span *ngIf="bandcamp_history['links'][elem]['artist']"> - </span>{{ bandcamp_history['links'][elem]['date'] }}<span *ngIf="bandcamp_history['links'][elem]['date']"> - </span>{{ bandcamp_history['links'][elem]['title'] }}</a>
                                     </span>
                                 </div>
 

@@ -17,8 +17,8 @@ export class SettingsComponent {
   mpd_port = "";
   stream = "";
   client_id = "";
-  target = "";
   log = "";
+  list_from = 60;
 
 
   constructor(public activeModal: NgbModal) {}
@@ -30,8 +30,8 @@ export class SettingsComponent {
     if(typeof(localStorage.mpd_port) != "undefined") this.mpd_port = localStorage.mpd_port;
     if(typeof(localStorage.stream) != "undefined") this.stream = localStorage.stream;
     if(typeof(localStorage.client_id) != "undefined") this.client_id = localStorage.client_id;
-    if(typeof(localStorage.target) != "undefined") this.target = localStorage.target;
     if(typeof(localStorage.log) != "undefined") this.log = localStorage.log;
+    if(typeof(localStorage.list_from) != "undefined") this.list_from = localStorage.list_from;
 
 
   };
@@ -43,8 +43,8 @@ export class SettingsComponent {
         localStorage.stream_updated = true;
       }
       if(variable == "client_id") localStorage.client_id = this.client_id;
-      if(variable == "target") localStorage.target = this.target;
       if(variable == "log") localStorage.log = this.log;
+      if(variable == "list_from") localStorage.list_from = this.list_from;
       this.messageEvent.emit(variable);
   };
 

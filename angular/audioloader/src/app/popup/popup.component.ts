@@ -12,6 +12,7 @@ import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 export class PopupComponent {
 
   @Input() name;
+  @Input() action;
   @Input() encoded;
   @Input() servicesBasePath;
   @Input() stream;

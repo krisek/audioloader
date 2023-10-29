@@ -101,12 +101,12 @@ The simplest and most portable way to run audioloader is Gunicorn.
 pip install gunicorn
 ```
 
-If Gunicorn serves directly the Flask backend, static cover art needs to be served by the backend; you need to set a MUSIC_DIR in the config and set `COVER_RESPONSE_TYPE=direct`.
+If Gunicorn serves directly the Flask backend, then the static cover art needs to be served as well by the Flask; you need to set a MUSIC_DIR in the config and set `COVER_RESPONSE_TYPE=direct`.
 
-If you want to add https or extra protection to the application, you can install a web server to proxy towards Gunicorn. An example Nginx virtual host configuration is included in the repository. If you are willing to expose your music library on this web server, you can configure the application to redirect the client to download cover art — this might be less resource intensive as serving the files through the Flack app directly. Your mileage might vary - I use `direct` setting nowadays on an RPi4 and it is all good, hence `COVER_RESPONSE_TYPE = direct` is the default configuration setting.
+If you want to add https or extra protection to the application, you can install a web server to proxy towards Gunicorn. An example Nginx virtual host configuration is included in the repository. If you are willing to expose your music library on this web server, you can configure the application to redirect the client to download cover art — this might be less resource intensive as serving the files through the Flack app directly. Your mileage might vary - I use the default `direct` setting for `COVER_RESPONSE_TYPE` nowadays on an RPi4 and it is all good.
 
 
-6. Bandcamp support
+6. Bandcamp and Youtube support
 
 You can enable the optional Bandcamp support by installing the bandcamp-downloader package. 
 
@@ -114,16 +114,21 @@ You can enable the optional Bandcamp support by installing the bandcamp-download
 pip install bandcamp-downloader
 ```
 
+Similarly, you can enable playing music from Youtube by installing the yt-dlp package.
+
+```bash
+pip install yt-dlp
+```
+
+This part of the code is not supported at all, it might break anytime.
+
 7. Startup
 
 ```bash
-gunicorn --workers 12 --max-requests 300  --bnd 0.0.0.0:3400  --timeout 1800 --chdir . wsgi:application
+gunicorn --workers 12 --max-requests 300  --bind 0.0.0.0:3400  --timeout 1800 --chdir . wsgi:application
 ```
 
-Two scripts are included in the repository.
-
-If you want to enable UPnP discovery, start the `disover.py` script as well, it requires two parameters: -m the IP address of the audioloader host and -n the local subnet. (This might be enhanced in later releases.) An example systemd unit file is included as well.
-
+If you want to enable UPnP discovery, start the `disover.py` script as well, it requires two parameters: -m the IP address of the audioloader host and -n the local subnet. (This might be enhanced in later releases.)
 
 ## You've been warned
 
@@ -135,7 +140,7 @@ Audioloader is distributed in this Git repository. New features are developed ag
 
 # Use
 
-If you run the application with standalone uWSGI, you just need to visit http://localhost:5000 after starting it.
+If you run the application with standalone gunicorn, you just need to visit http://localhost:3400 after starting it. 
 
 ## Navigation bar
 The first icon on the left side opens the directory view. The second opens the dash (which is the default view). The third one opens the radio stations view. The optional fourth one shows your Bandcamp history. In the middle you see the title of the currently playing song and the various media controls (if there's anything playing). On the left side you see a search bar: it needs minimum four characters to start searching.
@@ -149,9 +154,9 @@ Stream from: If you plan to stream from the MPD server, where this stream is loc
 
 Client: your id, this identifies your history / random album selection and favorites on the server, so that you can use the application from several devices
 
-Kodi hostname: where is your Kodi server accessible on the network. The application uses JSONRPC calls, you might need to enable it on Kodi (deprecated)
-
 Log level: not relevant (only debug is supported for the time being)
+
+List from # items: amount of sub-directories in a directory to represent with cover arts. If there are more sub-directories in a directory than this number then the sub-directories will be represented as a list. 
 
 ## Music selection
 The directory browser speaks for itself.

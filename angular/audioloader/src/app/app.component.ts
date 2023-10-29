@@ -12,6 +12,7 @@ import { ToastService } from './toast-service.service';
 import { interval } from 'rxjs';
 
 import { HostListener } from '@angular/core';
+import { EventListenerFocusTrapInertStrategy } from '@angular/cdk/a11y';
 
 @Component({
   selector: 'app-root',
@@ -87,7 +88,8 @@ export class AppComponent {
 
   settings = {
     'mpd_port': '6600',
-    'client_id': 'guest'
+    'client_id': 'guest',
+    'list_from': 60
   }
 
   currentsong = {'title': 'not playing', 'active': false, 'title_short': 'not playing', 'album': '', 'track': '', 'artist': '', 'players': [], 'default_stream': ''};
@@ -148,8 +150,8 @@ export class AppComponent {
       this.settings['client_id'] = localStorage['client_id'];
     }
 
-    if(typeof(localStorage.target) != "undefined" && localStorage.target != "" ){
-      this.settings['target'] = localStorage['target'];
+    if(typeof(localStorage.list_from) != "undefined" && localStorage.list_from != "" ){
+      this.settings['list_from'] = parseInt(localStorage['list_from']);
     }
 
     this.settings['stream'] = localStorage['stream'];
@@ -320,7 +322,7 @@ export class AppComponent {
       }
     }
 
-    if(this.dircount > 60){
+    if(this.dircount > this.settings['list_from']){
       this.showlist = true;
     }
     console.log(this.tree_dir);
@@ -512,22 +514,68 @@ export class AppComponent {
 
     this.http.get<any>(this.servicesBasePath + '/addplay?mpd_port=' + this.settings['mpd_port'] + '&'+ playparams + '&client_id=' + this.settings['client_id']  ).subscribe(data => {
       console.log("enqueued dir ");
-      
-      if(addObject['dir'] != ''){
-        this.showSuccess('loaded ' + this.truncate(this.baseName(addObject['dir']), 10))
-      }
-      else{
+
+      if('url' in addObject && addObject['url'] != '' ){
         this.showSuccess('loaded ' + this.truncate(addObject['url'], 10))
       }
-      
-      if(addObject['url'] == '') this.updateSpec('history'); else this.updateRadioHistory();
+      else{
+        this.showSuccess('loaded ' + this.truncate(this.baseName(addObject['dir']), 10));
+      }
 
+      if(this.dash){
+        this.showDash();
+      }      
+      else if(this.radio){
+         this.showRadio();
+      }
+      else if(this.bandcamp){
+          this.showBandcamp();
+        }
+
+      
       this.updateCurrentSong();
       for(let i = 0; i < addObject['load'].length; i++){
         this.openStream(addObject['load'][i]);
       }
     })
   };
+
+  removeHistory(addObject){
+    console.log("removeHistory");
+    console.log(addObject);
+    var playparams;
+
+    if('url' in addObject && addObject['url'] != ''){
+      if(addObject['stationuuid']){
+        console.log('radio url to remove from history');
+        playparams = 'url=' + encodeURIComponent(addObject['url']) + '&stationuuid=' + addObject['stationuuid'] ;
+      }
+      else{
+        console.log('bandcamp url to remove from history');
+        playparams = 'url=' + encodeURIComponent(addObject['url']);
+      }
+    }
+    else{
+      playparams = 'directory=' + encodeURIComponent(addObject['dir']);
+    }
+
+    this.http.get<any>(this.servicesBasePath + '/remove_history?client_id=' + this.settings['client_id'] + '&' +  playparams  ).subscribe(data => {
+      console.log("history remove triggered");
+      if('url' in addObject && addObject['url'] != ''){
+        if(addObject['stationuuid']){
+          this.showRadio();
+        }
+        else{
+          this.showBandcamp();
+        }
+      }
+      else{
+        this.showSuccess('delete from history ' + this.truncate(this.baseName(addObject['dir']), 10))
+        this.showDash();
+      }
+    })
+  };
+
 
   sendCommand(command){
     console.log("sendCommand: " + command);
@@ -643,6 +691,7 @@ export class AppComponent {
   openRadioModal(name, stationuuid, url, favicon){
     const modalRef = this.modalService.open(PopupComponent);
     modalRef.componentInstance.name = name;
+    modalRef.componentInstance.action = 'Play';
     modalRef.componentInstance.encoded = encodeURIComponent(name);
     modalRef.componentInstance.servicesBasePath = this.servicesBasePath;
     modalRef.componentInstance.players = this.currentsong.players;
@@ -655,14 +704,13 @@ export class AppComponent {
       this.addDir(receivedEntry);
     })
 
-
-
   }
 
 
   openModal(dir) {
     const modalRef = this.modalService.open(PopupComponent);
     modalRef.componentInstance.name = dir;
+    modalRef.componentInstance.action = 'Play';
     modalRef.componentInstance.encoded = encodeURIComponent(dir);
     modalRef.componentInstance.servicesBasePath = this.servicesBasePath;
     modalRef.componentInstance.players = this.currentsong.players;
@@ -675,6 +723,24 @@ export class AppComponent {
     })
 
   }
+
+  openHistoryRemoveModal(name, stationuuid, url, favicon) {
+    const modalRef = this.modalService.open(PopupComponent);
+    modalRef.componentInstance.name = name;
+    modalRef.componentInstance.action = 'Remove from history';
+    modalRef.componentInstance.encoded = encodeURIComponent(name);
+    modalRef.componentInstance.servicesBasePath = this.servicesBasePath;
+    modalRef.componentInstance.players = this.currentsong.players;
+    modalRef.componentInstance.stationuuid = stationuuid;
+    modalRef.componentInstance.url = url;
+    modalRef.componentInstance.favicon = favicon;
+    modalRef.componentInstance.messageEvent.subscribe((receivedEntry) => {
+      console.log("openModal returned: " + receivedEntry['url'] + " " + receivedEntry['load'].join(','));
+      this.removeHistory(receivedEntry);
+    })
+
+  }
+
 
  openSettings() {
     console.log("openSettings");
