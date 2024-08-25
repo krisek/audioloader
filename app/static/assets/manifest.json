@@ -1,0 +1,27 @@
+{
+    "name": "Audioloader",
+    "short_name": "Audioloader",
+    "description": "A responsive Music Player Daemon web client with special focus on listening full albums.",
+    "start_url": "/static/assets/index.html",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#5D7AB1",
+    "icons": [
+      {
+        "src": "vinyl_32.png",
+        "sizes": "32x32",
+        "type": "image/png"
+      },
+      {
+        "src": "vinyl_192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "vinyl_512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
+  

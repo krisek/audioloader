@@ -21,7 +21,7 @@ The application features six ways of selecting music from MPD and other sources:
 
 The Flask application runs on the same system where you run MPD. You can configure any supported output method on MPD; a very common use case is to install the application on a Raspberry Pi (or home server), configure MPD with HTTP stream output, so that you can stream music from all of your devices.
 
-If you configure the MPD server with a HTTP stream output, the application can load this stream to UPnP media renderers discovered on your network. ⚠ Don't forget to configure the STREAM_URL parameter in config.py or in the 'stream from' parameter in the settings menu of the web UI. UPnP device discovery is performed by a separate script.
+If you configure the MPD server with a HTTP stream output, the application can load this stream to UPnP media renderers or other mpd servers discovered on your network. ⚠ Don't forget to configure the STREAM_URL parameter in config.py or in the 'stream from' parameter in the settings menu of the web UI. UPnP device and mpd server discovery is performed by separate scripts.
 
 # Installation
 
@@ -108,13 +108,7 @@ If you want to add https or extra protection to the application, you can install
 
 6. Bandcamp and Youtube support
 
-You can enable the optional Bandcamp support by installing the bandcamp-downloader package. 
-
-```bash
-pip install bandcamp-downloader
-```
-
-Similarly, you can enable playing music from Youtube by installing the yt-dlp package.
+You can enable the optional Bandcamp and Youtube support by installing the yt-dlp package. 
 
 ```bash
 pip install yt-dlp
@@ -129,6 +123,8 @@ gunicorn --workers 12 --max-requests 300  --bind 0.0.0.0:3400  --timeout 1800 --
 ```
 
 If you want to enable UPnP discovery, start the `disover.py` script as well, it requires two parameters: -m the IP address of the audioloader host and -n the local subnet. (This might be enhanced in later releases.)
+
+Similarly, you can enable mpd discovery by starting the `discover-mpd.py` script. There is a little shell script as well (`discover-mpd-static.sh`) which updates your mpd player servers from your networks into redis without any probing -- this one is intended to be run from crontab.
 
 ## You've been warned
 
@@ -187,21 +183,9 @@ UPnP media renderers available on the network are monitored by the `discover.py`
 
 ```bash
 apt update
-apt install -y git
-cd /opt
-sudo tar xvf /downloads/node-v18.17.1-linux-x64.tar.xz 
-cd /usr/local/bin/
-sudo ln -s /opt/node-v18.17.1-linux-x64/bin/{corepack,node,npm,npx} .
-sudo npm install --global yarn
-sudo npm install -g @angular/cli
-sudo ln -s /opt/node-v18.17.1-linux-x64/bin/{ng,yarn,yarnpkg} .
+# get node installed with nvm
 cd /projects/audioloader/angular/audioloader
 yarn install
-yarn upgrade
-ng update @angular/cli
-ng update @angular/core
-ng update @angular/material
-ng update @angular/cdk
 ng serve --host 0.0.0.0
 
 ```

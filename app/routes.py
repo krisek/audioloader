@@ -39,27 +39,20 @@ import pyradios
 import sys
 
 bandcamp_enabled = True
-
-try:
-    import bandcamp_dl.bandcamp
-    from bandcamp_dl.bandcamp import Bandcamp
-    from bandcamp_dl.bandcampdownloader import BandcampDownloader
-    from bandcamp_dl.__init__ import __version__
-except ImportError:
-    # Handle the absence of the module_name here
-    bandcamp_enabled = False
-
-
 youtube_enabled = True
-
-try:
-    import yt_dlp
-except ImportError:
-    youtube_enabled = False
 
 log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO').upper(), None)
 
 logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
+
+try:
+    import yt_dlp
+    from bs4 import BeautifulSoup
+    app.logger.info('youtube and bandcamp enabled')
+except ImportError:
+     youtube_enabled = False
+     bandcamp_enabled = False
+
 
 CORS(app)
 
@@ -134,6 +127,76 @@ def process_yt_playable(url):
             playables.append(process_yt_entry(info))
 
         return info['title'], art, playables
+
+def parse_bandcamp_description(description):
+    """
+    Parse the description content to extract album title, artist, and release date.
+    """
+    # Remove extra newlines and spaces
+    description = description.strip()
+    
+    # Extract title, artist, and release date from the description
+    title_artist_release = re.search(r'^(.+?) by (.+?), released (\d{1,2} \w+ \d{4})', description)
+    if title_artist_release:
+        title = title_artist_release.group(1).strip()
+        artist = title_artist_release.group(2).strip()
+        release_date = title_artist_release.group(3).strip()
+        
+        # Extract the year from the release date
+        release_year = re.search(r'\d{4}', release_date)
+        release_year = release_year.group() if release_year else ""
+        
+        return title, artist, release_year
+    return "", "", ""
+
+def get_bandcamp_album_info(url):
+    # Fetch the page content
+    app.logger.info(url)
+    response = requests.get(url)
+    if response.status_code != 200:
+        app.logger.info("Failed to retrieve the Bandcamp page")
+        return None
+    
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    # Extract album details from meta tags
+    description_tag = soup.find('meta', attrs={'name': 'description'})
+    title, artist, release_year = ("", "", "")
+    
+    if description_tag:
+        description_content = description_tag.get('content', '')
+        title, artist, release_year = parse_bandcamp_description(description_content)
+    
+    cover_art_tag = soup.find('meta', property='og:image')
+    cover_art = cover_art_tag['content'] if cover_art_tag else ""
+
+    # Extract track URLs using yt-dlp
+    ydl_opts = {
+        'quiet': True,  # Suppress output unless there's an error
+        'extract_flat': 'in_playlist',  # Extract track info without downloading
+        'skip_download': True,  # Don't download the media
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(url, download=False)
+        
+        # Prepare the data structure
+        album_data = {
+            "artist": artist,
+            "title": title,
+            "release_year": release_year,
+            "cover_art": cover_art,
+            "tracks": []
+        }
+
+        # Extract the track URLs
+        for entry in info_dict.get('entries', []):
+            track_info = ydl.extract_info(entry['url'], download=False)
+            track_url = track_info.get('url')
+            if track_url:
+                album_data["tracks"].append(track_url)
+
+    return album_data
 
 
 @app.route('/cover', methods=['GET', 'POST'])
@@ -334,16 +397,30 @@ def kodi():
 @app.route('/upnp', methods=['GET', 'POST'])
 def upnp():
     server = request.args.get('server')
+    app.logger.info(server)
     if server == "" or server == "undefined":
         return jsonify({'result': 'no server given'})
     try:
-        d = upnpclient.Device(server)
-        if request.args.get('action', 'Player.Stop') == 'Player.Open':
-            d.AVTransport.SetAVTransportURI(InstanceID='0', CurrentURI=request.args.get('stream', app.config.get('STREAM_URL', 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain')))),CurrentURIMetaData='Audioloader')
-            d.AVTransport.Play(InstanceID='0', Speed='1')
-        else:
-            d.AVTransport.Stop(InstanceID='0')
-
+        if 'upnp' in server or 'xml' in server:
+            d = upnpclient.Device(server)
+            if request.args.get('action', 'Player.Stop') == 'Player.Open':
+                d.AVTransport.SetAVTransportURI(InstanceID='0', CurrentURI=request.args.get('stream', app.config.get('STREAM_URL', 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain')))),CurrentURIMetaData='Audioloader')
+                d.AVTransport.Play(InstanceID='0', Speed='1')
+            else:
+                d.AVTransport.Stop(InstanceID='0')
+        if '_6600' in server:
+            mpd_player_client = MPDClient()
+            mpd_player_client.timeout = 600
+            mpd_player_client.idletimeout = 600
+            (mpd_host, mpd_port) = server.split('_')
+            mpd_player_client.connect(mpd_host, int(mpd_port))
+            if request.args.get('action', 'Player.Stop') == 'Player.Open':
+                mpd_player_client.consume(1)
+                mpd_player_client.add(request.args.get('stream', app.config.get('STREAM_URL', 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain')))))
+                mpd_player_client.play()
+            else:
+                mpd_player_client.stop()
+            
     except Exception as e:
         app.logger.warn('couldnot run upnp commands')
         app.logger.debug(traceback.format_exc())
@@ -465,11 +542,11 @@ def get_active_players():
         for key in r.scan_iter("upnp:player:*:last_seen"):
             last_seen = float(r.get(key))
             #app.logger.debug("last seen vs now "+ key + "   " + str(last_seen) + '   ' + str(time.time()) + "   " +  str(time.time() - last_seen) )
-            if time.time() - last_seen < 900:
+            if time.time() - last_seen < 1200:
                 data = json.loads(r.get(key.replace('last_seen','data')))
                 players.append(data)
             #if have already all players read let's do some housekeeping here
-            if time.time() - last_seen > 1200:
+            if time.time() - last_seen > 1800:
                 r.delete(key.replace('last_seen','data'))
                 r.delete(key)
     except Exception as e:
@@ -597,9 +674,11 @@ def search_bandcamp():
         try:
             # lets get create list of urls for a bandcamp link
             app.logger.debug('searching for bandcamp album: ' + pattern)
-            bandcamp = Bandcamp()
-            album_list = []
-            album_list.append(bandcamp.parse(pattern, True, False, True)) #art, no lyrics, debug
+            
+            
+            
+            bandcamp_album_info = get_bandcamp_album_info(pattern)
+            album_list.append(bandcamp_album_info) #art, no lyrics, debug
             content['tree'] = album_list
 
         except Exception as e:
@@ -755,12 +834,11 @@ def mpd_proxy():
             
             if bandcamp_playable:
                 # lets get create list of urls for a bandcamp link
-                bandcamp = Bandcamp()
-                album_list = []
-                album_list.append(bandcamp.parse(playable, True, False, True)) #art, no lyrics, debug
-                for album in album_list:
-                    for track in album['tracks']:
-                        playables.append(track['url'])
+                bandcamp_album_info = get_bandcamp_album_info(playable)
+                app.logger.info(bandcamp_album_info)
+                for track in bandcamp_album_info['tracks']:
+                    playables.append(track)
+                
             if youtube_playable:
                 # lets get create list of urls for a bandcamp link
                 (yt_title, yt_art, playables) = process_yt_playable(playable)
@@ -842,10 +920,10 @@ def mpd_proxy():
                 if 'bandcamp.com' in playable:
                     client_history['links'][playable] = {
                         'url': playable,
-                        'favicon': album_list[0].get('art', ''),
-                        'title': album_list[0].get('title', ''),
-                        'artist': album_list[0].get('artist', ''),
-                        'date': album_list[0].get('date', '')
+                        'favicon': bandcamp_album_info.get('art', ''),
+                        'title': bandcamp_album_info.get('title', ''),
+                        'artist': bandcamp_album_info.get('artist', ''),
+                        'date': bandcamp_album_info.get('release_year', '')
                     }
                 else:
                     client_history['links'][playable] = {
