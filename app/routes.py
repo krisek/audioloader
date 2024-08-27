@@ -746,7 +746,7 @@ def remove_history():
 @app.route('/status', methods=['GET', 'POST'])
 @app.route('/currentsong', methods=['GET', 'POST'])
 @app.route('/count', methods=['GET', 'POST'])
-
+@app.route('/toggleoutput', methods=['GET', 'POST'])
 
 def mpd_proxy():
     content = {}
@@ -965,6 +965,14 @@ def mpd_proxy():
             content['bandcamp_enabled'] = bandcamp_enabled
             content['default_stream'] = app.config.get('STREAM_URL', 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain')))
             content = process_currentsong(content)
+        elif(request.path == '/toggleoutput'):
+            try:
+                mpd_client.toggleoutput(int(request.args.get('output', '')))
+            except Excepton as e:
+                pass
+            finally:
+                content = mpd_client.outputs()
+
         mpd_client.disconnect()
 
     except Exception as e:
