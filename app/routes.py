@@ -416,6 +416,7 @@ def upnp():
             mpd_player_client.connect(mpd_host, int(mpd_port))
             if request.args.get('action', 'Player.Stop') == 'Player.Open':
                 mpd_player_client.consume(1)
+                mpd_player_client.clear()
                 mpd_player_client.add(request.args.get('stream', app.config.get('STREAM_URL', 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain')))))
                 mpd_player_client.play()
             else:
@@ -937,7 +938,6 @@ def mpd_proxy():
                     #write back the file
                     with open(client_history_file, 'w') as ch:
                         ch.write(json.dumps(client_history))
-
         elif(request.path == '/play'):
             content = mpd_client.play()
         elif(request.path == '/pause'):
