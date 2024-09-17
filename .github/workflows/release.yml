@@ -1,0 +1,158 @@
+on:
+  push:
+    tags:
+      - 'v*'
+
+name: Create Release
+
+jobs:
+  once:
+    name: Create single release for all builds
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create a release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+  build:
+    name: Build and package for all platforms
+    needs: once
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        arch: [amd64, arm64, arm64-android, arm7]
+
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'
+
+      - name: Build and package for Android
+        if: matrix.arch == 'arm64-android' && matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lib32stdc++6 lib32z1
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          export ANDROID_HOME=$HOME/android
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          unzip commandlinetools-linux-9477386_latest.zip -d /tmp
+          mv /tmp/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "ndk-bundle" "platforms;android-21"
+          export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
+          export PATH=$ANDROID_NDK_HOME:$PATH
+          export GOARCH=arm64
+          export CGO_ENABLED=1
+          export GOOS=android
+          find $ANDROID_HOME -name aarch64-linux-android21-clang
+          export CC=`find $ANDROID_HOME -name aarch64-linux-android21-clang | head -1`
+
+          go build -v -o audioloader server.go 2>&1 | tee build.log
+          tar -czvf audioloader-linux-arm64-android-${{ github.ref_name }}.tar.gz audioloader static
+
+      - name: Build and package for Linux and Android
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          if [[ "${{ matrix.arch }}" == "amd64" ]]; then
+            export GOARCH=amd64
+            export GOOS=linux
+            export CGO_ENABLED=0
+            go build -v -o audioloader server.go
+            tar -czvf audioloader-linux-amd64-${{ github.ref_name }}.tar.gz audioloader static
+          elif [[ "${{ matrix.arch }}" == "arm64" ]]; then
+            export GOARCH=arm64
+            export GOOS=linux
+            export CGO_ENABLED=0
+            go build -v -o audioloader server.go
+            tar -czvf audioloader-linux-arm64-${{ github.ref_name }}.tar.gz audioloader static
+          elif [[ "${{ matrix.arch }}" == "arm7" ]]; then
+            export GOARCH=arm
+            export GOOS=linux
+            export GOARM=7
+            export CGO_ENABLED=0
+            go build -v -o audioloader server.go
+            tar -czvf audioloader-linux-arm7-${{ github.ref_name }}.tar.gz audioloader static
+          fi
+
+      - name: Build and package for Windows
+        if: matrix.os == 'windows-latest' && matrix.arch == 'amd64'
+        run: |
+          cmd /C "set CGO_ENABLED=0 && go build -v -o audioloader.exe server.go"
+          powershell Compress-Archive -Path audioloader.exe,static -DestinationPath audioloader-windows-x86_64-${{ github.ref_name }}.zip
+
+      - name: Upload Release Asset Linux amd64
+        if: matrix.arch == 'amd64'  && matrix.os == 'ubuntu-latest'
+        id: upload-release-asset-linux-amd64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ needs.once.outputs.upload_url }}
+          asset_path: ./audioloader-linux-amd64-${{ github.ref_name }}.tar.gz
+          asset_name: audioloader-linux-amd64-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/x-tgz
+
+      - name: Upload Release Asset Linux arm64
+        if: matrix.arch == 'arm64'  && matrix.os == 'ubuntu-latest'
+        id: upload-release-asset-linux-arm64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ needs.once.outputs.upload_url }}
+          asset_path: ./audioloader-linux-arm64-${{ github.ref_name }}.tar.gz
+          asset_name: audioloader-linux-arm64-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/x-tgz
+
+      - name: Upload Release Asset Linux arm64-android
+        if: matrix.arch == 'arm64-android'  && matrix.os == 'ubuntu-latest'
+        id: upload-release-asset-linux-arm64-android
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ needs.once.outputs.upload_url }}
+          asset_path: ./audioloader-linux-arm64-android-${{ github.ref_name }}.tar.gz
+          asset_name: audioloader-linux-arm64-android-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/x-tgz
+
+      - name: Upload Release Asset Linux arm7
+        if: matrix.arch == 'arm7' && matrix.os == 'ubuntu-latest'
+        id: upload-release-asset-linux-arm7
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ needs.once.outputs.upload_url }}
+          asset_path: ./audioloader-linux-arm7-${{ github.ref_name }}.tar.gz
+          asset_name: audioloader-linux-arm7-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/x-tgz
+
+      - name: Upload Release Asset Windows amd64
+        if: matrix.os == 'windows-latest' && matrix.arch == 'amd64'
+        id: upload-release-asset-windows-amd64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ needs.once.outputs.upload_url }}
+          asset_path: ./audioloader-windows-x86_64-${{ github.ref_name }}.zip
+          asset_name: audioloader-windows-x86_64-${{ github.ref_name }}.zip
+          asset_content_type: application/zip
+

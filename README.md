@@ -4,9 +4,9 @@ Audioloader is a web based [Music Player Deamon](http://www.musicpd.org) (MPD) c
 
 [![Screenshot](https://i.postimg.cc/fyCT7vS9/Screenshot-from-2020-04-26-16-03-24.png)](https://postimg.cc/fS3NDmKz)
 
-The software has three components: a Flask/Python based backend, an Angular/Bootstrap based, responsive web user interface and and optional discovery daemon which discovers UPnP media renderers on the local network.
+The software has three components: a Go backend, an Angular/Bootstrap based, responsive web user interface and and optional discovery daemon which discovers UPnP media renderers or mpd servers on the local network that can play streams from the central MPD server.
 
-The Flask application is very thin, it does almost nothing but proxying requests towards the MPD server from the web client.
+The Go application is very thin, it does almost nothing but proxying requests towards the MPD server from the web client.
 
 The application features six ways of selecting music from MPD and other sources:
 
@@ -18,109 +18,50 @@ The application features six ways of selecting music from MPD and other sources:
 1. select radio station from the [radio-browser.info](http://radio-browser.info) community radio database
 1. play album from Bandcamp (optional) 
 
+The Go application runs on the same system where you run MPD. You can configure any supported output method on MPD; a very common use case is to install the application on a Raspberry Pi (or home server), configure MPD with HTTP stream output, so that you can stream music from all of your devices.
 
-The Flask application runs on the same system where you run MPD. You can configure any supported output method on MPD; a very common use case is to install the application on a Raspberry Pi (or home server), configure MPD with HTTP stream output, so that you can stream music from all of your devices.
-
-If you configure the MPD server with a HTTP stream output, the application can load this stream to UPnP media renderers or other mpd servers discovered on your network. ⚠ Don't forget to configure the STREAM_URL parameter in config.py or in the 'stream from' parameter in the settings menu of the web UI. UPnP device and mpd server discovery is performed by separate scripts.
+If you configure the MPD server with a HTTP stream output, the application can load this stream to UPnP media renderers or other mpd servers discovered on your network. ⚠ Don't forget to configure the `AL_DEFAULT_STREAM` environment parameter or in the 'stream from' parameter in the settings menu of the web UI. UPnP device and mpd server discovery is performed by separate scripts.
 
 # Installation
 
-## Install from repository
-
-I detail here how to install the application on Debian/Ubuntu derivatives, but you can get it running wherever Python and Pip are available.
-
-1. Install base packages
+1. Install Redis
 
 ```bash
-sudo apt install redis-server redis-tools git uwsgi-plugin-python3 python3 python3-pip python3-virtualenv
+sudo apt install redis-server redis-tools
 ```
 
-Redis is used to cache the name of folder images and to keep track of the UPnP devices discovered on the network. It slightly improves performance of showing folder images, but it is not a must to install it the application can work without it — though, if you want to have UPnP discovery, it is a must to install it.
+Redis is used to cache the name of folder images and to keep track of the UPnP devices / MPD servers discovered on the network. It slightly improves performance of showing folder images, but it is not a must to install it the application can work without it — though, if you want to have UPnP discovery, it is a must to install it.
 
-2. Download
+2. Download the appropriate release, and unpack it.
+
+3. Set environment variables
 
 ```bash
-git clone https://github.com/krisek/audioloader.git
+AL_BANDCAMP_ENABLED: true | false
+AL_CLIENT_DB  where to store client favorites/history/random folders — the user running the web application needs to have write access on this directory
+AL_DEFAULT_STREAM: url of the mpd lame/vorbis stream (httpd output) configured ~ can be overriden from the web UI settings
+AL_MPD_HOST: hostname of your mpd server
+AL_MPD_PORT: mpd server port ~ can be overriden from the web UI settings
+AL_LISTENING_PORT: where the backend should lister
+AL_LIBRARY_PATH: the application will look in this folder for your music repository when it returns cover art
+AL_LOG_LEVEL: audioloader log level
 ```
 
-3. Prepare environment
+For simple use only variables `AL_CLIENT_DB` and `AL_LIBRARY_PATH` are required to be set.
 
-```bash
-cd audioloader
-virtualenv -p python3 venv
-. venv/bin/activate
-pip install -r requirements.txt
-cp app.ini.tpl app.ini
-```
-
-4. Configure
-
-```bash
-cp config.tpl.py config.py
-```
-
-In this file you can edit the configuration of the Flask backend.
-
-```python
-  #serve cover art directly (from MUSIC_DIR) or through a redirect (to MUSIC_WWW)
-  COVER_RESPONSE_TYPE = 'direct'
-
-  #the application will look in this folder for your music repository when it returns cover art
-  MUSIC_DIR = '/media/music/mp3'
-
-  #the application will redirect to this URI if you decide to server cover art through redirect to a web server
-  MUSIC_WWW = '/music'
-
-  #force client cache for static content
-  SEND_FILE_MAX_AGE_DEFAULT = 43200
-
-  #where to store client favorites/history/random folders — the user running the web application needs to have write access on this directory
-  CLIENT_DB = '/var/lib/audioloader'
-
-  LOG_LEVEL = 'info'
-
-  #hostname of default kodi server to load music to
-  # KODI = 'kodi.localdomain'
-
-  #url of the mpd lame/vorbis stream (httpd output) configured ~ can be overriden from the web UI settings
-  STREAM_URL = 'http://{}:8000/audio.ogg'.format(os.environ.get('hostname', 'localhost.localdomain'))
-
-  #hostname of your mpd server
-  MPD_HOST = 'localhost'
-  
-  #hostname of your Redis server
-  REDIS_HOST = 'localhost'
-
-```
+4. Run audioloader
 
 5. Web server
 
-The simplest and most portable way to run audioloader is Gunicorn.
-
-```bash
-pip install gunicorn
-```
-
-If Gunicorn serves directly the Flask backend, then the static cover art needs to be served as well by the Flask; you need to set a MUSIC_DIR in the config and set `COVER_RESPONSE_TYPE=direct`.
-
-If you want to add https or extra protection to the application, you can install a web server to proxy towards Gunicorn. An example Nginx virtual host configuration is included in the repository. If you are willing to expose your music library on this web server, you can configure the application to redirect the client to download cover art — this might be less resource intensive as serving the files through the Flack app directly. Your mileage might vary - I use the default `direct` setting for `COVER_RESPONSE_TYPE` nowadays on an RPi4 and it is all good.
-
-
 6. Bandcamp and Youtube support
 
-You can enable the optional Bandcamp and Youtube support by installing the yt-dlp package. 
+You need to install `yt-dlp` for working Bandcamp / Youtube support. 
 
 ```bash
 pip install yt-dlp
 ```
 
 This part of the code is not supported at all, it might break anytime.
-
-7. Startup
-
-```bash
-gunicorn --workers 12 --max-requests 300  --bind 0.0.0.0:3400  --timeout 1800 --chdir . wsgi:application
-```
 
 If you want to enable UPnP discovery, start the `disover.py` script as well, it requires two parameters: -m the IP address of the audioloader host and -n the local subnet. (This might be enhanced in later releases.)
 
@@ -132,11 +73,11 @@ No responsibility on my side for any damage. The application is intended to be u
 
 # Upgrade
 
-Audioloader is distributed in this Git repository. New features are developed against branches, thus you can rely on the master HEAD until further notice. Do regular pulls against it (`git pull https://github.com/krisek/audioloader.git && pip install -r requirements.txt`), so that you get the latest bugfixes and the new features implemented.
+Audioloader is distributed in this Git repository. New features are developed against branches, thus you can rely on the master HEAD until further notice. I try to make release builds from time to time.
 
 # Use
 
-If you run the application with standalone gunicorn, you just need to visit http://localhost:3400 after starting it. 
+If you run the application with standalone, you just need to visit http://localhost:3400 after starting it. 
 
 ## Navigation bar
 The first icon on the left side opens the directory view. The second opens the dash (which is the default view). The third one opens the radio stations view. The optional fourth one shows your Bandcamp history. In the middle you see the title of the currently playing song and the various media controls (if there's anything playing). On the left side you see a search bar: it needs minimum four characters to start searching.
