@@ -61,6 +61,7 @@ var (
     logLevel = getEnv("AL_LOG_LEVEL", "info")
     maxBackoffDuration = 256 * time.Second // Maximum backoff of 256 seconds
     maxRetryDuration   = 1 * time.Hour     // Total maximum retry duration of 1 hour
+    bandcampHistorySize, _ = strconv.Atoi(getEnv("AL_BANDCAMP_HISTORY_SIZE", "100"))
 )
 
 // Helper function to get environment variables with a default value
@@ -1620,8 +1621,8 @@ func mpdProxyHandler(w http.ResponseWriter, r *http.Request) {
             }
 
             clientData.BandcampHistory = append(clientData.BandcampHistory, playable)
-            if len(clientData.BandcampHistory) > 36 {
-                clientData.BandcampHistory = clientData.BandcampHistory[len(clientData.BandcampHistory)-36:]
+            if len(clientData.BandcampHistory) > bandcampHistorySize {
+                clientData.BandcampHistory = clientData.BandcampHistory[len(clientData.BandcampHistory)-bandcampHistorySize:]
             }
             _, exists := clientData.Links[playable]
             if exists {
