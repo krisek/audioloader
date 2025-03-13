@@ -1,7 +1,6 @@
 module server
 
 go 1.23
-
 toolchain go1.23.1
 
 require (
@@ -14,6 +13,7 @@ require (
 require (
 	github.com/PuerkitoBio/goquery v1.10.0
 	github.com/huin/goupnp v1.3.0
+	github.com/rs/zerolog v1.33.0
 )
 
 require (
@@ -23,8 +23,7 @@ require (
 	github.com/fhs/gompd/v2 v2.3.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
-	github.com/rs/zerolog v1.33.0 // indirect
-	golang.org/x/net v0.29.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 )
