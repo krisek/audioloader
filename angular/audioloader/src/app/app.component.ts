@@ -14,6 +14,11 @@ import { interval } from 'rxjs';
 import { HostListener } from '@angular/core';
 import { EventListenerFocusTrapInertStrategy } from '@angular/cdk/a11y';
 
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { tap } from 'rxjs/operators';
+
 @Component({
   selector: 'app-root',
   animations: [
@@ -116,6 +121,8 @@ export class AppComponent {
 
   bandcamp_enabled = true;
 
+  searchTerm$ = new Subject<string>();
+
     @HostListener('window:focus', ['$event'])
     onFocus(event: FocusEvent): void {
       if(Date.now() - this.lastPolled > 30000){
@@ -187,6 +194,15 @@ export class AppComponent {
         if(this.settings['log'] == 'debug') console.log('poll seems to be ok');
       }
       });
+
+      this.searchTerm$.pipe(
+        debounceTime(300), // Wait 300ms after typing stops
+        distinctUntilChanged(), // Ignore if value didn't change
+        switchMap(lookfor => this.performSearch(lookfor)) // Switch to new search
+      ).subscribe();
+      
+  
+
     };
 
   delay(ms: number) {
@@ -461,7 +477,54 @@ export class AppComponent {
 
   };
 
-  searchItem(lookfor){
+
+  performSearch(lookfor: string): Observable<any> {
+    console.log("Searching for:", lookfor);
+  
+    if ((this.dash || this.dirbrowser) && !lookfor.match(/bandcamp.com\//)) {
+      this.dash = false;
+      this.bandcamp = false;
+      this.active_area = "browser";
+  
+      return this.http.get<any>(`${this.servicesBasePath}/search?mpd_port=${this.settings['mpd_port']}&pattern=${encodeURIComponent(lookfor)}`)
+        .pipe(
+          tap(data => {
+            console.log(data);
+            this.dirbrowser = true;
+            this.displayTree(data);
+          })
+        );
+  
+    } else if (this.radio) {
+      return this.http.get<any>(`${this.servicesBasePath}/search_radio?mpd_port=${this.settings['mpd_port']}&pattern=${encodeURIComponent(lookfor)}`)
+        .pipe(
+          tap(data => {
+            console.log(data);
+            this.stations = data.tree;
+          })
+        );
+  
+    } else if (this.bandcamp || lookfor.match(/bandcamp.com\//)) {
+      return this.http.get<any>(`${this.servicesBasePath}/search_bandcamp?mpd_port=${this.settings['mpd_port']}&pattern=${encodeURIComponent(lookfor)}`)
+        .pipe(
+          tap(data => {
+            console.log(data);
+            this.openRadioModal(data['tree'][0]['title'], data['tree'][0]['artist'], data['tree'][0]['url'], data['tree'][0]['art']);
+          })
+        );
+    }
+  
+    // Default: Return an empty observable if no condition matches
+    return of(null);
+  }
+  
+  
+  searchItem(lookfor: string) {
+    if (lookfor.length < 3) return;
+    this.searchTerm$.next(lookfor);
+  }
+
+  searchItem_old(lookfor){
     if(lookfor.length < 3) return;
     console.log("searchItem " + lookfor);
 
