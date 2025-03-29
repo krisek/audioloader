@@ -155,6 +155,9 @@
                             <mat-icon aria-hidden="false" aria-label="fav" *ngIf="favourite" class="dash-icon togglestar-icon">favorite</mat-icon>
                             <mat-icon aria-hidden="false" aria-label="fav" *ngIf="!favourite" class="dash-icon togglestar-icon">favorite_border</mat-icon>
                         </a>
+                        <a href="#" class="share" (click)="copyToClipboard(dir)" class="albumlink">
+                            <mat-icon aria-hidden="false" aria-label="fav" class="dash-icon share-icon" style="font-size: 80%;">share</mat-icon>
+                        </a>
                         <a href="#" class="play" (click)="openModal(dir)" class="albumlink">
                             <mat-icon aria-hidden="false" aria-label="fav" class="dash-icon play-icon">play_arrow</mat-icon>
                         </a>

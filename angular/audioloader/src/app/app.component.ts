@@ -1,4 +1,4 @@
-import { Component,Input, Output, EventEmitter } from '@angular/core';
+import { Component,Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { HttpClient }  from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { AppConfigService } from './app-config-service.service';
@@ -18,6 +18,8 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { ActivatedRoute, Router } from '@angular/router';
+
 
 @Component({
   selector: 'app-root',
@@ -123,6 +125,9 @@ export class AppComponent {
 
   searchTerm$ = new Subject<string>();
 
+  currentDir: string = '';
+
+
     @HostListener('window:focus', ['$event'])
     onFocus(event: FocusEvent): void {
       if(Date.now() - this.lastPolled > 30000){
@@ -138,7 +143,7 @@ export class AppComponent {
     }
 
 
-  constructor(private environment: AppConfigService, private http: HttpClient, private modalService: NgbModal, private http2: HttpClient, public toastService: ToastService) {
+  constructor(private environment: AppConfigService, private http: HttpClient, private modalService: NgbModal, private http2: HttpClient, public toastService: ToastService, private route: ActivatedRoute, private router: Router) {
     this.servicesBasePath = environment.config.servicesBasePath;
     }
 
@@ -201,7 +206,12 @@ export class AppComponent {
         switchMap(lookfor => this.performSearch(lookfor)) // Switch to new search
       ).subscribe();
       
-  
+      this.route.fragment.subscribe(fragment => {
+        if (fragment) {
+          this.currentDir = decodeURIComponent(fragment);
+          this.showDir(this.currentDir);
+        }
+      });
 
     };
 
@@ -477,6 +487,19 @@ export class AppComponent {
 
   };
 
+
+  navigateTo(dir: string) {
+    this.currentDir = dir;
+    this.router.navigate([], { fragment: encodeURIComponent(dir) });
+    this.showDir(dir);
+  }
+
+  copyToClipboard(dir: string) {
+    const url = `${window.location.origin}/#${encodeURIComponent(dir)}`;
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Copied to clipboard! ' + dir);
+    });
+  }
 
   performSearch(lookfor: string): Observable<any> {
     console.log("Searching for:", lookfor);
