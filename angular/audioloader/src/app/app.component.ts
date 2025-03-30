@@ -4,6 +4,8 @@ import { CommonModule } from '@angular/common';
 import { AppConfigService } from './app-config-service.service';
 import { SettingsComponent } from './settings/settings.component';
 import { PopupComponent } from './popup/popup.component';
+import { PopupLoadComponent } from './popup_load/popup_load.component';
+
 import { ToastComponent } from './toast/toast.component';
 import { AlbumcellComponent } from './albumcell/albumcell.component';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
@@ -99,7 +101,7 @@ export class AppComponent {
     'list_from': 60
   }
 
-  currentsong = {'title': 'not playing', 'active': false, 'title_short': 'not playing', 'album': '', 'track': '', 'artist': '', 'players': [], 'default_stream': ''};
+  currentsong = {'title': 'not playing', 'active': false, 'title_short': 'not playing', 'album': '', 'track': '', 'artist': '', 'players': [], 'default_stream': '', 'outputs': [], 'snapcast_clients': []};
 
   dash = false;
   active_area = "browser";
@@ -725,8 +727,6 @@ export class AppComponent {
   };
 
 
-
-
   updateDir(dir) {
     this.dir = dir;
     this.encoded = encodeURIComponent(dir);
@@ -810,6 +810,25 @@ export class AppComponent {
 
   }
 
+  openPopupLoad() {
+    const modalRef = this.modalService.open(PopupLoadComponent);
+    modalRef.componentInstance.action = 'Turn on/off stream on other mpd/upnp renderers';
+    modalRef.componentInstance.players = this.currentsong.players;
+    modalRef.componentInstance.messageEvent.subscribe((receivedEntry) => {
+      console.log("openPopupLoad returned: " +  receivedEntry['players']);
+      for(let i = 0; i < receivedEntry['players'].length; i++){
+        if (receivedEntry['players'][i]['load'] == true){
+          this.openStream(i);
+        }
+        if (receivedEntry['players'][i]['load'] == false){
+          this.stopStream(i);
+        }
+      }
+      
+    })    
+
+  }
+
   openHistoryRemoveModal(name, stationuuid, url, favicon) {
     const modalRef = this.modalService.open(PopupComponent);
     modalRef.componentInstance.name = name;
@@ -875,6 +894,44 @@ export class AppComponent {
       this.showSuccess('unloaded from '  + this.currentsong.players[player_index]['name']);
     })
 
+  }
+
+  toggleMpdOutput(output){
+    console.log("Output to be toggled " + output)
+
+    this.http.get<any>(this.servicesBasePath + '/toggleoutput'+'?mpd_port=' + this.settings['mpd_port'] + '&output=' + output.outputid).subscribe(data => {
+      console.log("output toggled "   + output.outputname);
+      if(output.outputenabled == 0){
+        this.showSuccess(output.outputname + ' output turned on');
+      }
+      else{
+        this.showSuccess(output.outputname + ' output turned off');
+      }
+      
+      
+      this.updateCurrentSong()
+    })
+  }
+
+  toggleSnapcastClient(client){
+    console.log("Client to be toggled " + client)
+    var muted = "true"
+    if(client.muted){
+      muted = "false"
+    }
+
+    this.http.get<any>(this.servicesBasePath + '/togglesnapcastclient'+'?mpd_port=' + this.settings['mpd_port'] + '&id=' + client.id + '&muted=' + muted).subscribe(data => {
+      console.log("client toggled "   + client.name);
+      if(client.muted){
+        this.showSuccess(client.name + ' client unmuted');
+      }
+      else{
+        this.showSuccess(client.name + ' client muted');
+      }
+      
+      
+      this.updateCurrentSong()
+    })
   }
 
 

@@ -1,0 +1,24 @@
+    <div class="modal-header" id="addPopup-load">
+      <h5 style="text-align: center;" class="modal-title">{{action}}</h5>
+
+    </div>
+    <div class="modal-body">
+      <div *ngFor="let player of players">
+        <p align="center">
+          <mat-button-toggle-group [value]="player.load ?? null" (change)="updateLoad($event, player.location)" aria-label="Three-way toggle">
+            <mat-button-toggle [value]="false">off</mat-button-toggle>
+            <mat-button-toggle [value]="null">{{ player.name }}</mat-button-toggle>
+            <mat-button-toggle [value]="true">on</mat-button-toggle>
+          </mat-button-toggle-group>
+          
+        </p>
+      </div>
+    </div>
+
+
+
+    <div class="modal-footer">
+
+      <button type="button" ngbAutofocus class="btn btn-primary" (click)="addDir();activeModal.dismissAll('Close click')">OK</button>
+     
+    </div>

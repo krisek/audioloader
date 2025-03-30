@@ -1,5 +1,4 @@
 <app-toast aria-live="polite" aria-atomic="true"></app-toast>
-
 <style>
     .navbar-dark {
         background-color: #3f51b5;
@@ -70,6 +69,11 @@
     .navbar-icon-control-2 {
         margin-left: 0.6em;
     }
+
+    .muted-off {
+        opacity: 0.6;
+    }
+
 </style>
 
 <nav class="navbar navbar-expand-lg navbar-dark">
@@ -105,20 +109,43 @@
 
                 <div ngbDropdown class="nav-item" *ngIf="currentsong['active']" style="padding-right: 0.7em;">
                     <a href="#" (click)="false" class="nav-link" ngbDropdownToggle>
-                        <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream">queue_music</mat-icon>
+                        <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="mpd outputs">stream</mat-icon>
                     </a>
-                    <div ngbDropdownMenu>
-                        <a *ngFor="let player of currentsong.players; index as i; " href="#" class="dropdown-item" (click)="openStream(i)">{{ player.name  }}</a>
+                    <div ngbDropdownMenu *ngIf="currentsong.outputs.length > 1">
+                        <a *ngFor="let output of currentsong.outputs; index as i;" 
+                            href="#" 
+                            class="dropdown-item" 
+                            [ngClass]="{'muted-off': output.outputenabled == 0}" 
+                            (click)="toggleMpdOutput(output)">
+                            {{ output.outputname }} turn
+                            <span *ngIf="output.outputenabled == 1">off</span>
+                            <span *ngIf="output.outputenabled == 0">on</span>
+                        </a>
                     </div>
                 </div>
-                <div ngbDropdown class="nav-item" *ngIf="currentsong['active']" style="padding-right: 0.7em;">
+                <div ngbDropdown class="nav-item" *ngIf="currentsong['active'] && currentsong['snapcast_clients']" style="padding-right: 0.7em;">
                     <a href="#" (click)="false" class="nav-link" ngbDropdownToggle>
-                        <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="load stream">remove_from_queue</mat-icon>
+                        <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="snapcast clients">cast_connected</mat-icon>
                     </a>
-                    <div ngbDropdownMenu>
-                        <a *ngFor="let player of currentsong.players; index as i; " href="#" class="dropdown-item" (click)="stopStream(i)">{{ player.name  }}</a>
+                    <div ngbDropdownMenu *ngIf="currentsong.snapcast_clients">
+                    <a *ngFor="let client of currentsong.snapcast_clients; index as i;"
+                        href="#" 
+                        class="dropdown-item" 
+                        [ngClass]="{'muted-off': client.muted}" 
+                        (click)="toggleSnapcastClient(client)">
+                         {{ client.name }}
+                         <span *ngIf="!client.muted">mute</span>
+                         <span *ngIf="client.muted">unmute</span>
+                     </a>
+
+
+
                     </div>
                 </div>
+                <a href="#" *ngIf="currentsong['active'] && currentsong.players.length > 0" class="nav-item nav-link" (click)="openPopupLoad()" class="nav-link" style="padding-right: 0.7em;">
+                    <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="mpd/upnp load">settings_input_antenna</mat-icon>
+                </a>
+
                 <a href="#" class="nav-item nav-link" *ngIf="currentsong['next_state']" (click)="sendCommand(currentsong['next_state'])" style="padding-right: 0.7em;">
                     <mat-icon aria-hidden="false" aria-label="fav" class="navbar-icon" title="{{ currentsong['next_title'] }}">{{ currentsong['next_icon'] }}</mat-icon>
                 </a>

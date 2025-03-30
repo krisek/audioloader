@@ -12,7 +12,10 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { SettingsComponent } from './settings/settings.component';
 import { PopupComponent } from './popup/popup.component';
+import { PopupLoadComponent } from './popup_load/popup_load.component';
+
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -32,7 +35,7 @@ const appInitializerFn = (appConfig: AppConfigService) => {
 
 @NgModule({
     declarations: [
-        AppComponent, SettingsComponent, PopupComponent, ToastComponent, AlbumcellComponent, ReplacePipe
+        AppComponent, SettingsComponent, PopupComponent, PopupLoadComponent, ToastComponent, AlbumcellComponent, ReplacePipe
     ],
     imports: [
         BrowserModule,
@@ -42,7 +45,8 @@ const appInitializerFn = (appConfig: AppConfigService) => {
         NgbModule,
         BrowserAnimationsModule,
         MatIconModule,
-        MatSlideToggleModule
+        MatSlideToggleModule,
+        MatButtonToggleModule,
     ],
     providers: [
         AppConfigService,

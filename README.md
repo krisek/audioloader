@@ -22,6 +22,10 @@ The Go application runs on the same system where you run MPD. You can configure 
 
 If you configure the MPD server with a HTTP stream output, the application can load this stream to UPnP media renderers or other mpd servers discovered on your network. ⚠ Don't forget to configure the `AL_DEFAULT_STREAM` environment parameter or in the 'stream from' parameter in the settings menu of the web UI. UPnP device and mpd server discovery is performed by separate scripts.
 
+If you have multiple outputs on your MPD server, you can toggle them from the application directly.
+
+If you configure a Snapcast server (it is a great tool for creating a multi-room streaming system with mpd), then the application will query the clients on the Snapcast server, and you can mute or un-mute them from the application.
+
 # Installation
 
 1. Install Redis
@@ -44,6 +48,7 @@ AL_MPD_HOST: hostname of your mpd server
 AL_MPD_PORT: mpd server port ~ can be overriden from the web UI settings
 AL_LISTENING_PORT: where the backend should lister
 AL_LIBRARY_PATH: the application will look in this folder for your music repository when it returns cover art
+AL_SNAPCAST_HOST: the application well query this Snapcast server for clients
 AL_LOG_LEVEL: audioloader log level
 ```
 

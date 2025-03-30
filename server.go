@@ -8,6 +8,7 @@ import (
     "github.com/robfig/cron/v3"
     "github.com/rs/cors"
     "html/template"
+    "net"
     "net/http"
     "strconv"
     "os"
@@ -26,6 +27,7 @@ import (
     "github.com/PuerkitoBio/goquery"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+    "bufio"
 )
 
 type FileInfo struct {
@@ -62,6 +64,7 @@ var (
     maxBackoffDuration = 256 * time.Second // Maximum backoff of 256 seconds
     maxRetryDuration   = 1 * time.Hour     // Total maximum retry duration of 1 hour
     bandcampHistorySize, _ = strconv.Atoi(getEnv("AL_BANDCAMP_HISTORY_SIZE", "100"))
+    snapcastHost = getEnv("AL_SNAPCAST_HOST", "localhost")
 )
 
 // Helper function to get environment variables with a default value
@@ -177,6 +180,8 @@ func main() {
     http.HandleFunc("/currentsong", currentSongHandler)
     http.HandleFunc("/count", countHandler)
     http.HandleFunc("/toggleoutput", toggleOutputHandler)
+    http.HandleFunc("/snapcastclients", getSnapcastClientsHandler)
+    http.HandleFunc("/togglesnapcastclient", toggleSnapcastClientHandler)
     http.HandleFunc("/", catchAllHandler)
 
     // Enable CORS
@@ -1836,6 +1841,14 @@ func pollCurrentSongHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     // Add additional information
+    // Get the current outputs
+    outputs, err := mpdClient.ListOutputs()
+    if err != nil {
+        http.Error(w, "Failed to get outputs", http.StatusInternalServerError)
+        log.Debug().Str("function", "toggleOutputHandler").Msg(fmt.Sprintf("Failed to get outputs: %v", err))
+    }
+    currentsongMap["outputs"] = outputs
+
     currentsongMap["players"] = getActivePlayers() // Preserve the structure of players
     currentsongMap["bandcamp_enabled"] = bandcampEnabled
     currentsongMap["default_stream"] = defaultStream
@@ -1845,6 +1858,17 @@ func pollCurrentSongHandler(w http.ResponseWriter, r *http.Request) {
 
     // Close MPD client connection
     mpdClient.Close()
+
+	// Get Snapcast clients data
+	if getEnv("AL_SNAPCAST_HOST", "") != "" {
+        snapcastClients, err := getSnapcastClientsData()
+        if err != nil {
+            log.Debug().Str("function", "pollCurrentSongHandler").Msg(fmt.Sprintf("Failed to get Snapcast clients: %v", err))
+            // Handle the error appropriately, e.g., log it or return an error response
+        } else {
+            currentsongMap["snapcast_clients"] = snapcastClients
+        }
+    } 
 
     // Return the content as JSON
     w.Header().Set("Content-Type", "application/json")
@@ -1870,6 +1894,13 @@ func currentSongHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    // Get the current outputs
+    outputs, err := mpdClient.ListOutputs()
+    if err != nil {
+        http.Error(w, "Failed to get outputs", http.StatusInternalServerError)
+        log.Debug().Str("function", "toggleOutputHandler").Msg(fmt.Sprintf("Failed to get outputs: %v", err))
+    }
+
     status, err := mpdClient.Status()
     if err != nil {
         http.Error(w, "Failed to get status", http.StatusInternalServerError)
@@ -1888,11 +1919,25 @@ func currentSongHandler(w http.ResponseWriter, r *http.Request) {
 
     // Add additional information (players, bandcamp_enabled, default_stream)
     currentsongMap["players"] = getActivePlayers()
+    currentsongMap["outputs"] = outputs
     currentsongMap["bandcamp_enabled"] = bandcampEnabled
     currentsongMap["default_stream"] = defaultStream
 
     // Process current song
     currentsongMap = processCurrentSong(currentsongMap)
+
+	// Get Snapcast clients data
+	if getEnv("AL_SNAPCAST_HOST", "") != "" {
+        snapcastClients, err := getSnapcastClientsData()
+        if err != nil {
+            log.Debug().Str("function", "pollCurrentSongHandler").Msg(fmt.Sprintf("Failed to get Snapcast clients: %v", err))
+            // Handle the error appropriately, e.g., log it or return an error response
+        } else {
+            currentsongMap["snapcast_clients"] = snapcastClients
+        }
+    } 
+	
+
 
     // Instead of converting to mpd.Attrs (which flattens the map), just encode the JSON directly
     mpdClient.Close()
@@ -1991,6 +2036,177 @@ func toggleOutputHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(outputs)
 }
+
+
+type SnapcastResponse struct {
+	Result struct {
+		Server struct {
+			Groups []struct {
+				Clients []struct {
+					ID        string `json:"id"`
+					Connected bool   `json:"connected"`
+					Config    struct {
+						Volume struct {
+							Muted bool `json:"muted"`
+						} `json:"volume"`
+					} `json:"config"`
+					Host struct {
+						Name string `json:"name"`
+					} `json:"host"`
+				} `json:"clients"`
+			} `json:"groups"`
+		} `json:"server"`
+	} `json:"result"`
+}
+
+type FilteredClient struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Connected bool   `json:"connected"`
+	Muted     bool   `json:"muted"`
+}
+
+// getSnapcastClientsData is a helper function to get Snapcast client data.
+func getSnapcastClientsData() ([]FilteredClient, error) {
+	// Connect to Snapcast server
+	log.Debug().Str("function", "getSnapcastClientsData").Msg(fmt.Sprintf("snapcastHost: %v", snapcastHost))
+	conn, err := net.DialTimeout("tcp", snapcastHost+":1705", 3*time.Second)
+	if err != nil {
+		log.Debug().Str("function", "getSnapcastClientsData").Msg(fmt.Sprintf("Failed to connect to Snapcast server: %v", err))
+		return nil, fmt.Errorf("failed to connect to Snapcast server: %w", err)
+	}
+	defer conn.Close()
+	log.Debug().Str("function", "getSnapcastClientsData").Msg(fmt.Sprintf("connected: %v", snapcastHost))
+
+	// Send JSON-RPC request
+	sendData := "{\"id\":1, \"jsonrpc\":\"2.0\", \"method\":\"Server.GetStatus\"}\n\n"
+	_, err = conn.Write([]byte(sendData))
+	if err != nil {
+		log.Debug().Str("function", "getSnapcastClientsData").Msg(fmt.Sprintf("Failed to send request to Snapcast server: %v", err))
+		return nil, fmt.Errorf("failed to send request to Snapcast server: %w", err)
+	}
+	log.Debug().Str("function", "getSnapcastClientsData").Msg(fmt.Sprintf("request sent: %v", snapcastHost))
+
+	// Read response
+	reader := bufio.NewReader(conn)
+	var response []byte
+	for {
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			log.Debug().Str("function", "getSnapcastClientsData").Msg(fmt.Sprintf("Failed to read response from Snapcast server: %v", err))
+			return nil, fmt.Errorf("failed to read response from Snapcast server: %w", err)
+		}
+		response = append(response, line...)
+		if bytes.Contains(response, []byte("}\n")) || bytes.Contains(response, []byte("}")) {
+			break
+		}
+	}
+
+	// log.Debug().Str("function", "getSnapcastClientsData").Msg(fmt.Sprintf("Response received: %s", string(response)))
+
+	// Parse JSON response
+	var snapResponse SnapcastResponse
+	err = json.Unmarshal(response, &snapResponse)
+	if err != nil {
+		log.Debug().Str("function", "getSnapcastClientsData").Msg(fmt.Sprintf("Failed to decode json response from Snapcast server: %v", err))
+		return nil, fmt.Errorf("failed to decode json response from Snapcast server: %w", err)
+	}
+
+	// Extract relevant client information
+	var clients []FilteredClient
+	for _, group := range snapResponse.Result.Server.Groups {
+		for _, client := range group.Clients {
+			clients = append(clients, FilteredClient{
+				ID:        client.ID,
+				Name:      client.Host.Name,
+				Connected: client.Connected,
+				Muted:     client.Config.Volume.Muted,
+			})
+		}
+	}
+	return clients, nil
+}
+
+func getSnapcastClientsHandler(w http.ResponseWriter, r *http.Request) {
+	clients, err := getSnapcastClientsData()
+	if err != nil {
+		http.Error(w, "Failed to get Snapcast clients", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(clients)
+}
+
+func toggleSnapcastClientHandler(w http.ResponseWriter, r *http.Request) {
+    id := r.URL.Query().Get("id")
+    muted := r.URL.Query().Get("muted")
+    
+    log.Debug().Str("function", "toggleSnapcastClientHandler").Msg(fmt.Sprintf("id: %v muted: %v", id, muted))
+    
+    // ❯ echo -e '{"id":5,"jsonrpc":"2.0","method":"Client.SetVolume","params":{"id":"14:75:5b:a4:67:e4","volume":{ "muted": true}}}' | socat - TCP:10.181.0.13:1705
+    // {"id":5,"jsonrpc":"2.0","result":{"volume":{"muted":true,"percent":100}}}
+    // echo -e '{"id":5,"jsonrpc":"2.0","method":"Client.SetVolume","params":{"id":"14:75:5b:a4:67:e4","volume":{ "muted": false}}}' | socat - TCP:10.181.0.13:1705
+    // {"id":5,"jsonrpc":"2.0","result":{"volume":{"muted":false,"percent":100}}}
+
+
+	conn, err := net.DialTimeout("tcp", snapcastHost+":1705", 3*time.Second)
+	if err != nil {
+		log.Debug().Str("function", "toggleSnapcastClientHandler").Msg(fmt.Sprintf("Failed to connect to Snapcast server: %v", err))
+		http.Error(w, "failed to connect to Snapcast server", http.StatusInternalServerError)
+        return
+	}
+	defer conn.Close()
+	log.Debug().Str("function", "toggleSnapcastClientHandler").Msg(fmt.Sprintf("connected: %v", snapcastHost))
+
+	// Send JSON-RPC request
+	sendData := "{\"id\":5, \"jsonrpc\":\"2.0\", \"method\":\"Client.SetVolume\", \"params\":{\"id\":\"" + id + "\", \"volume\":{\"muted\":" + muted + "}}}\n\n"
+	_, err = conn.Write([]byte(sendData))
+	if err != nil {
+		log.Debug().Str("function", "toggleSnapcastClientHandler").Msg(fmt.Sprintf("Failed to send request to Snapcast server: %v", err))
+		http.Error(w, "failed to send request to Snapcast server", http.StatusInternalServerError)
+        return
+	}
+	log.Debug().Str("function", "toggleSnapcastClientHandler").Msg(fmt.Sprintf("request sent: %v", sendData))
+
+	// Read response
+	reader := bufio.NewReader(conn)
+	var response []byte
+	for {
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			log.Debug().Str("function", "toggleSnapcastClientHandler").Msg(fmt.Sprintf("Failed to read response from Snapcast server: %v", err))
+			http.Error(w, "failed to read response from Snapcast server", http.StatusInternalServerError)
+            return
+		}
+		response = append(response, line...)
+        log.Debug().Str("function", "toggleSnapcastClientHandler").Msg(fmt.Sprintf("response line read: %v", line))
+
+		if bytes.Contains(response, []byte("}\n")) || bytes.Contains(response, []byte("}")) {
+			break
+		}
+	}
+
+    var snapResponse SnapcastResponse
+	err = json.Unmarshal(response, &snapResponse)
+	if err != nil {
+		log.Debug().Str("function", "getSnapcastClientsData").Msg(fmt.Sprintf("Failed to decode json response from Snapcast server: %v", err))
+		http.Error(w, "failed to decode json response from Snapcast server", http.StatusInternalServerError)
+        return
+	}
+
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(snapResponse)
+
+
+}
+
 
 func catchAllHandler(w http.ResponseWriter, r *http.Request) {
     // Redirect root path to /static/
