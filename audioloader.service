@@ -1,0 +1,24 @@
+; mkdir -p ~/.config/systemd/user
+; cp audioloader.service ~/.config/systemd/user/
+; nano ~/.config/systemd/user/audioloader.service # to set full path the checked out directory
+; loginctl enable-linger $(whoami); systemctl --user daemon-reload
+; systemctl --user enable audioloader && systemctl --user start audioloader
+
+[Unit]
+Description=Audioloader Music Library
+After=network.target
+
+[Service]
+# Environment variables as per README.md
+Environment="AL_CLIENT_DB=/audioloader/db/"   # full path to to store history, favourites, etc.
+Environment="AL_LIBRARY_PATH=Music/"          # your MPD library root; Audioloader will try to load album art from here
+Environment="AL_LOG_LEVEL=info"                          
+Environment="AL_SNAPCAST_HOST=localhost"     
+ExecStart=/audioloader/audioloader            # set full path here!
+Restart=always
+RestartSe=5
+ExecReload=/bin/kill -HUP $MAINPID
+WorkingDirectory=/audioloader                 # set full path here!
+
+[Install]
+WantedBy=default.target

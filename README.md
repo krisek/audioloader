@@ -72,6 +72,10 @@ If you want to enable UPnP discovery, start the `disover.py` script as well, it 
 
 Similarly, you can enable mpd discovery by starting the `discover-mpd.py` script. There is a little shell script as well (`discover-mpd-static.sh`) which updates your mpd player servers from your networks into redis without any probing -- this one is intended to be run from crontab.
 
+## systemd control
+
+If you want to have systemd to control the service you can install and customize the `audioloader.service` unit file in the repository.
+
 ## You've been warned
 
 No responsibility on my side for any damage. The application is intended to be used in friendly or appropriately protected network environment.
