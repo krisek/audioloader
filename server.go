@@ -17,9 +17,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -68,10 +70,146 @@ var (
 	logLevel               = getEnv("AL_LOG_LEVEL", "info")
 	maxBackoffDuration     = 256 * time.Second // Maximum backoff of 256 seconds
 	maxRetryDuration       = 1 * time.Hour     // Total maximum retry duration of 1 hour
+	maxConcurrentPolls     = getEnvInt("AL_MAX_CONCURRENT_POLLS", 32)
 	bandcampHistorySize, _ = strconv.Atoi(getEnv("AL_BANDCAMP_HISTORY_SIZE", "100"))
 	snapcastHost           = getEnv("AL_SNAPCAST_HOST", "localhost")
 	sharedMPDConnections   = newMPDConnectionManager()
+	pollActiveRequests     int64
+	pollTotalRequests      uint64
+	pollTimeouts           uint64
+	pollIdleEvents         uint64
+	pollErrors             uint64
+	pollRejectedDuplicate  uint64
+	pollRejectedCapacity   uint64
+	metricsPollSamples     uint64
+	mpdDialAttempts        uint64
+	mpdDialFailures        uint64
+	mpdDialSuccesses       uint64
+	pollLimiterMu          sync.Mutex
+	activePollByClient     = make(map[string]struct{})
+	pollSlots              = make(chan struct{}, maxConcurrentPolls)
 )
+
+type mpdMetricsSnapshot struct {
+	PollActiveRequests int64  `json:"poll_active_requests"`
+	PollTotalRequests  uint64 `json:"poll_total_requests"`
+	PollTimeouts       uint64 `json:"poll_timeouts"`
+	PollIdleEvents     uint64 `json:"poll_idle_events"`
+	PollErrors         uint64 `json:"poll_errors"`
+	PollRejectDuplicate uint64 `json:"poll_reject_duplicate"`
+	PollRejectCapacity  uint64 `json:"poll_reject_capacity"`
+	PollSlotCapacity    int    `json:"poll_slot_capacity"`
+	PollSlotInUse       int    `json:"poll_slot_in_use"`
+	MPDDialAttempts    uint64 `json:"mpd_dial_attempts"`
+	MPDDialFailures    uint64 `json:"mpd_dial_failures"`
+	MPDDialSuccesses   uint64 `json:"mpd_dial_successes"`
+	Goroutines         int    `json:"goroutines"`
+}
+
+func getMPDMetricsSnapshot() mpdMetricsSnapshot {
+	return mpdMetricsSnapshot{
+		PollActiveRequests: atomic.LoadInt64(&pollActiveRequests),
+		PollTotalRequests:  atomic.LoadUint64(&pollTotalRequests),
+		PollTimeouts:       atomic.LoadUint64(&pollTimeouts),
+		PollIdleEvents:     atomic.LoadUint64(&pollIdleEvents),
+		PollErrors:         atomic.LoadUint64(&pollErrors),
+		PollRejectDuplicate: atomic.LoadUint64(&pollRejectedDuplicate),
+		PollRejectCapacity:  atomic.LoadUint64(&pollRejectedCapacity),
+		PollSlotCapacity:    cap(pollSlots),
+		PollSlotInUse:       len(pollSlots),
+		MPDDialAttempts:    atomic.LoadUint64(&mpdDialAttempts),
+		MPDDialFailures:    atomic.LoadUint64(&mpdDialFailures),
+		MPDDialSuccesses:   atomic.LoadUint64(&mpdDialSuccesses),
+		Goroutines:         runtime.NumGoroutine(),
+	}
+}
+
+func maybeLogPollMetricsSnapshot() {
+	sample := atomic.AddUint64(&metricsPollSamples, 1)
+	if sample%50 != 0 {
+		return
+	}
+
+	snapshot := getMPDMetricsSnapshot()
+	log.Info().
+		Str("function", "pollCurrentSongHandler").
+		Int64("poll_active_requests", snapshot.PollActiveRequests).
+		Uint64("poll_total_requests", snapshot.PollTotalRequests).
+		Uint64("poll_timeouts", snapshot.PollTimeouts).
+		Uint64("poll_idle_events", snapshot.PollIdleEvents).
+		Uint64("poll_errors", snapshot.PollErrors).
+		Uint64("poll_reject_duplicate", snapshot.PollRejectDuplicate).
+		Uint64("poll_reject_capacity", snapshot.PollRejectCapacity).
+		Int("poll_slot_capacity", snapshot.PollSlotCapacity).
+		Int("poll_slot_in_use", snapshot.PollSlotInUse).
+		Uint64("mpd_dial_attempts", snapshot.MPDDialAttempts).
+		Uint64("mpd_dial_failures", snapshot.MPDDialFailures).
+		Uint64("mpd_dial_successes", snapshot.MPDDialSuccesses).
+		Int("goroutines", snapshot.Goroutines).
+		Msg("MPD poll metrics snapshot")
+}
+
+func pollClientKey(r *http.Request) string {
+	if clientID := r.URL.Query().Get("client_id"); clientID != "" {
+		return "client_id:" + clientID
+	}
+
+	ip := r.Header.Get("X-Forwarded-For")
+	if ip == "" {
+		ip = r.Header.Get("X-Real-IP")
+	}
+	if ip == "" {
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = r.RemoteAddr
+		} else {
+			ip = host
+		}
+	} else {
+		parts := strings.Split(ip, ",")
+		ip = strings.TrimSpace(parts[0])
+	}
+
+	return ip + "|" + r.UserAgent()
+}
+
+func tryAcquireClientPoll(key string) bool {
+	pollLimiterMu.Lock()
+	defer pollLimiterMu.Unlock()
+
+	if _, exists := activePollByClient[key]; exists {
+		return false
+	}
+	activePollByClient[key] = struct{}{}
+	return true
+}
+
+func releaseClientPoll(key string) {
+	pollLimiterMu.Lock()
+	defer pollLimiterMu.Unlock()
+	delete(activePollByClient, key)
+}
+
+func tryAcquirePollSlot() bool {
+	select {
+	case pollSlots <- struct{}{}:
+		return true
+	default:
+		return false
+	}
+}
+
+func releasePollSlot() {
+	select {
+	case <-pollSlots:
+	default:
+	}
+}
+
+func mpdMetricsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(getMPDMetricsSnapshot())
+}
 
 type managedMPDConn struct {
 	mu     sync.Mutex
@@ -136,7 +274,13 @@ func (m *mpdConnectionManager) withClient(host, port, purpose string, fn func(*m
 	defer conn.mu.Unlock()
 
 	if conn.client == nil {
-		client, err := getMPDClient(conn.host, conn.port)
+		retryBudget := maxRetryDuration
+		if purpose == "poll-idle" {
+			// Long-poll should fail fast and retry on the next HTTP poll request.
+			retryBudget = 10 * time.Second
+		}
+
+		client, err := getMPDClientWithRetry(conn.host, conn.port, retryBudget)
 		if err != nil {
 			return err
 		}
@@ -164,9 +308,22 @@ func getEnv(key, defaultVal string) string {
 	return defaultVal
 }
 
+func getEnvInt(key string, defaultVal int) int {
+	value := getEnv(key, strconv.Itoa(defaultVal))
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed <= 0 {
+		return defaultVal
+	}
+	return parsed
+}
+
 // getMPDClient creates a new MPD client connection using the provided host and port.
 // It retries the connection in case of failure with an exponential backoff strategy.
 func getMPDClient(host string, port string) (*mpd.Client, error) {
+	return getMPDClientWithRetry(host, port, maxRetryDuration)
+}
+
+func getMPDClientWithRetry(host string, port string, maxTotalRetry time.Duration) (*mpd.Client, error) {
 	if port == "" {
 		port = mpdPort
 	}
@@ -176,18 +333,21 @@ func getMPDClient(host string, port string) (*mpd.Client, error) {
 	var totalWaitTime time.Duration
 
 	for {
+		atomic.AddUint64(&mpdDialAttempts, 1)
 		client, err := mpd.Dial("tcp", address)
 		if err == nil {
+			atomic.AddUint64(&mpdDialSuccesses, 1)
 			// Success! Return the client
 			return client, nil
 		}
+		atomic.AddUint64(&mpdDialFailures, 1)
 
 		// Log the error
 		log.Printf("Failed to connect to MPD server at %s: %v. Retrying in %v...", address, err, backoff)
 
 		// Check if we've exceeded the maximum retry duration
 		totalWaitTime += backoff
-		if totalWaitTime >= maxRetryDuration {
+		if totalWaitTime >= maxTotalRetry {
 			return nil, fmt.Errorf("could not connect to MPD server after multiple retries: %w", err)
 		}
 
@@ -269,6 +429,7 @@ func main() {
 	http.HandleFunc("/currentsong", currentSongHandler)
 	http.HandleFunc("/count", countHandler)
 	http.HandleFunc("/toggleoutput", toggleOutputHandler)
+	http.HandleFunc("/debug/mpd_metrics", mpdMetricsHandler)
 	http.HandleFunc("/snapcastclients", getSnapcastClientsHandler)
 	http.HandleFunc("/togglesnapcastclient", toggleSnapcastClientHandler)
 	http.HandleFunc("/", catchAllHandler)
@@ -1891,6 +2052,34 @@ func processCurrentSong(currentsong map[string]interface{}) map[string]interface
 
 func pollCurrentSongHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
+	clientKey := pollClientKey(r)
+
+	if !tryAcquireClientPoll(clientKey) {
+		atomic.AddUint64(&pollRejectedDuplicate, 1)
+		log.Debug().Str("function", "pollCurrentSongHandler").Str("client", clientKey).Msg("Duplicate poll request detected; returning immediate state")
+		currentSongHandler(w, r)
+		return
+	}
+	defer releaseClientPoll(clientKey)
+
+	if !tryAcquirePollSlot() {
+		atomic.AddUint64(&pollRejectedCapacity, 1)
+		log.Warn().Str("function", "pollCurrentSongHandler").Int("poll_slot_capacity", cap(pollSlots)).Msg("Poll capacity reached; returning immediate state")
+		currentSongHandler(w, r)
+		return
+	}
+	defer releasePollSlot()
+
+	total := atomic.AddUint64(&pollTotalRequests, 1)
+	active := atomic.AddInt64(&pollActiveRequests, 1)
+	defer atomic.AddInt64(&pollActiveRequests, -1)
+
+	log.Debug().
+		Str("function", "pollCurrentSongHandler").
+		Uint64("poll_total_requests", total).
+		Int64("poll_active_requests", active).
+		Msg("Starting poll request")
+	maybeLogPollMetricsSnapshot()
 
 	// Wait for MPD events with a timeout on a dedicated long-poll connection.
 	timeout := 60 * time.Second
@@ -1906,20 +2095,39 @@ func pollCurrentSongHandler(w http.ResponseWriter, r *http.Request) {
 			done <- nil
 		}()
 
+		timer := time.NewTimer(timeout)
+		defer timer.Stop()
+
 		select {
 		case idleErr := <-done:
 			if idleErr != nil {
+				atomic.AddUint64(&pollErrors, 1)
 				return idleErr
 			}
+			atomic.AddUint64(&pollIdleEvents, 1)
 			log.Debug().Str("function", "pollCurrentSongHandler").Msg(fmt.Sprintf("Something happened in mpd"))
 			return nil
-		case <-time.After(timeout):
+		case <-timer.C:
+			atomic.AddUint64(&pollTimeouts, 1)
 			log.Debug().Str("function", "pollCurrentSongHandler").Msg(fmt.Sprintf("Timeout waiting for mpd events"))
 			_ = mpdClient.Close()
+
+			// Wait briefly for Idle() to unwind after closing the connection.
+			// This avoids accumulating orphaned goroutines in prolonged timeouts.
+			select {
+			case idleErr := <-done:
+				if idleErr != nil && !isMPDConnectionError(idleErr) {
+					log.Warn().Str("function", "pollCurrentSongHandler").Msg(fmt.Sprintf("Idle returned unexpected error after timeout close: %v", idleErr))
+				}
+			case <-time.After(2 * time.Second):
+				log.Warn().Str("function", "pollCurrentSongHandler").Msg("Idle did not exit promptly after timeout close")
+			}
+
 			return errMPDIdleTimeout
 		}
 	})
 	if err != nil && !errors.Is(err, errMPDIdleTimeout) {
+		atomic.AddUint64(&pollErrors, 1)
 		log.Debug().Str("function", "pollCurrentSongHandler").Msg(fmt.Sprintf("Failed to wait for mpd events: %v", err))
 	}
 
