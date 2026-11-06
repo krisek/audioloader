@@ -1786,9 +1786,9 @@ func mpdProxyHandler(w http.ResponseWriter, r *http.Request) {
 
 				ClientData.History = append(ClientData.History, playable)
 
-				// Limit the history to the last 10 items
-				if len(ClientData.History) > 10 {
-					ClientData.History = ClientData.History[len(ClientData.History)-10:]
+				// Limit the history to the last 50 items
+				if len(ClientData.History) > 50 {
+					ClientData.History = ClientData.History[len(ClientData.History)-50:]
 				}
 
 				ClientDataFile := filepath.Join(clientDB, fmt.Sprintf("%s.history.json", clientID))
