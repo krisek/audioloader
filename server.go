@@ -424,6 +424,10 @@ func main() {
 	http.HandleFunc("/next", mpdProxyHandler)
 	http.HandleFunc("/prev", mpdProxyHandler)
 	http.HandleFunc("/stop", mpdProxyHandler)
+	http.HandleFunc("/queue", mpdProxyHandler)
+	http.HandleFunc("/queue_play", mpdProxyHandler)
+	http.HandleFunc("/queue_remove", mpdProxyHandler)
+	http.HandleFunc("/queue_clear", mpdProxyHandler)
 	http.HandleFunc("/status", mpdProxyHandler)
 	http.HandleFunc("/poll_currentsong", pollCurrentSongHandler)
 	http.HandleFunc("/currentsong", currentSongHandler)
@@ -1500,6 +1504,60 @@ func mpdProxyHandler(w http.ResponseWriter, r *http.Request) {
 		case "/prev":
 			err = mpdClient.Previous()
 			content["message"] = "Previous track"
+		case "/queue":
+			entries, err := mpdClient.PlaylistInfo(-1, -1)
+			if err != nil {
+				http.Error(w, "Failed to read queue", http.StatusInternalServerError)
+				return errResponseSent
+			}
+			status, _ := mpdClient.Status()
+			queue := make([]map[string]interface{}, 0, len(entries))
+			for _, e := range entries {
+				duration, _ := strconv.ParseFloat(e["duration"], 64)
+				queue = append(queue, map[string]interface{}{
+					"id": e["Id"], "pos": e["Pos"], "file": e["file"], "title": e["Title"],
+					"artist": e["Artist"], "album": e["Album"], "duration": duration,
+				})
+			}
+			content["queue"] = queue
+			content["current_id"] = status["songid"]
+		case "/queue_play":
+			id, convErr := strconv.Atoi(r.URL.Query().Get("id"))
+			if convErr != nil {
+				http.Error(w, "Invalid id", http.StatusBadRequest)
+				return errResponseSent
+			}
+			err = mpdClient.PlayID(id)
+			content["message"] = "Playing"
+		case "/queue_remove":
+			id, convErr := strconv.Atoi(r.URL.Query().Get("id"))
+			if convErr != nil {
+				http.Error(w, "Invalid id", http.StatusBadRequest)
+				return errResponseSent
+			}
+			err = mpdClient.DeleteID(id)
+			content["message"] = "Removed"
+		case "/queue_clear":
+			// Keep the track that is playing; with nothing playing, empty the queue.
+			status, _ := mpdClient.Status()
+			if status["state"] == "stop" || status["songid"] == "" {
+				err = mpdClient.Clear()
+			} else {
+				entries, listErr := mpdClient.PlaylistInfo(-1, -1)
+				if listErr != nil {
+					http.Error(w, "Failed to read queue", http.StatusInternalServerError)
+					return errResponseSent
+				}
+				for _, e := range entries {
+					if e["Id"] == status["songid"] {
+						continue
+					}
+					if id, convErr := strconv.Atoi(e["Id"]); convErr == nil {
+						mpdClient.DeleteID(id)
+					}
+				}
+			}
+			content["message"] = "Queue cleared"
 		case "/stop":
 			mpdClient.Stop()
 			mpdClient.Clear()
@@ -1726,6 +1784,22 @@ func mpdProxyHandler(w http.ResponseWriter, r *http.Request) {
 			content["tree"] = fileInfos
 
 		case "/addplay":
+			if file := r.URL.Query().Get("file"); file != "" {
+				// Single library file: append to the queue and make sure it plays (no signal.mp3, no history).
+				if !validLibraryFile(file) {
+					http.Error(w, "Invalid file", http.StatusBadRequest)
+					return errResponseSent
+				}
+				mpdClient.Consume(true)
+				if err := mpdClient.Add(file); err != nil {
+					log.Debug().Str("function", "mpdProxyHandler:addplay").Msg(fmt.Sprintf("add file failed: %v", err))
+					http.Error(w, "File not found in library", http.StatusNotFound)
+					return errResponseSent
+				}
+				mpdClient.Play(-1)
+				content["message"] = "Enqueued"
+				return nil
+			}
 			var playables []string
 			playable := r.URL.Query().Get("directory")
 			if playable == "" {
@@ -2552,4 +2626,18 @@ func catchAllHandler(w http.ResponseWriter, r *http.Request) {
 		// If the path is a file, you can serve it directly or handle it as needed
 		http.ServeFile(w, r, absPath)
 	}
+}
+
+// validLibraryFile accepts only a relative path inside the MPD library: no URL schemes,
+// no absolute paths, no ".." segments (MPD would otherwise open arbitrary URIs).
+func validLibraryFile(file string) bool {
+	if file == "" || strings.HasPrefix(file, "/") || strings.Contains(file, "://") || strings.ContainsAny(file, "\x00\n\r\\") {
+		return false
+	}
+	for _, seg := range strings.Split(file, "/") {
+		if seg == ".." {
+			return false
+		}
+	}
+	return true
 }
