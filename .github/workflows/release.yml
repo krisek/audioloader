@@ -156,3 +156,63 @@ jobs:
           asset_name: audioloader-windows-x86_64-${{ github.ref_name }}.zip
           asset_content_type: application/zip
 
+
+  build-mcp:
+    name: Build and package audioloader-mcp
+    needs: once
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: linux-amd64,         goos: linux,   goarch: amd64, goarm: '',  ext: '' }
+          - { name: linux-arm64,         goos: linux,   goarch: arm64, goarm: '',  ext: '' }
+          - { name: linux-arm7,          goos: linux,   goarch: arm,   goarm: '7', ext: '' }
+          # Pure Go, no cgo: a static linux/arm64 binary (only talks to localhost, so no resolver issues)
+          - { name: linux-arm64-android, goos: linux,   goarch: arm64, goarm: '',  ext: '' }
+          - { name: windows-x86_64,      goos: windows, goarch: amd64, goarm: '',  ext: '.exe' }
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: mcp/go.mod
+
+      - name: Test
+        if: matrix.name == 'linux-amd64'
+        working-directory: mcp
+        run: go test ./...
+
+      - name: Build and package
+        working-directory: mcp
+        env:
+          CGO_ENABLED: '0'
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+        run: |
+          NAME=audioloader-mcp-${{ matrix.name }}-${{ github.ref_name }}
+          go build -trimpath -ldflags "-s -w" -o audioloader-mcp${{ matrix.ext }} .
+          mkdir -p dist/$NAME
+          cp audioloader-mcp${{ matrix.ext }} README.md dist/$NAME/
+          cp ../audioloader-mcp.service dist/$NAME/
+          if [[ "${{ matrix.goos }}" == "windows" ]]; then
+            (cd dist && zip -r ../$NAME.zip $NAME)
+          else
+            tar -czvf $NAME.tar.gz -C dist $NAME
+          fi
+          echo "ASSET=mcp/$(ls $NAME.*)" >> "$GITHUB_ENV"
+          echo "ASSET_NAME=$(ls $NAME.*)" >> "$GITHUB_ENV"
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ needs.once.outputs.upload_url }}
+          asset_path: ./${{ env.ASSET }}
+          asset_name: ${{ env.ASSET_NAME }}
+          asset_content_type: application/octet-stream

@@ -1,0 +1,24 @@
+; Optional MCP front-end for audioloader (separate process; skip it if you don't need MCP).
+; mkdir -p ~/.config/systemd/user
+; cp audioloader-mcp.service ~/.config/systemd/user/
+; nano ~/.config/systemd/user/audioloader-mcp.service   # set full paths, and create the routes file (see mcp/README.md)
+; systemctl --user daemon-reload
+; systemctl --user enable audioloader-mcp && systemctl --user start audioloader-mcp
+
+[Unit]
+Description=Audioloader MCP server
+After=network.target audioloader.service
+
+[Service]
+# One "secret-path client_id" per line; the path is the credential. chmod 600 this file.
+Environment="AL_MCP_ROUTES_FILE=/audioloader/mcp-routes.txt"
+Environment="AL_MCP_UPSTREAM=http://127.0.0.1:3400"
+Environment="AL_MCP_PORT=3401"
+# Environment="AL_MCP_READONLY=true"
+ExecStart=/audioloader/audioloader-mcp        # set full path here!
+Restart=always
+RestartSec=5
+WorkingDirectory=/audioloader                 # set full path here!
+
+[Install]
+WantedBy=default.target
