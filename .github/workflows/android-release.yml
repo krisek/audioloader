@@ -58,4 +58,5 @@ jobs:
         with:
           files: android/audioloader-remote-${{ env.VERSION }}.apk
           generate_release_notes: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          # Only a suffix after the version (android-v1.2.3-rc1) makes it a pre-release; the tag prefix has a dash too.
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
