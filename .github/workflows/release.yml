@@ -216,3 +216,33 @@ jobs:
           asset_path: ./${{ env.ASSET }}
           asset_name: ${{ env.ASSET_NAME }}
           asset_content_type: application/octet-stream
+
+  android-apk:
+    name: Attach the latest signed Android remote APK
+    needs: once
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the newest android-v* release APK
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          # Newest stable Android release (pre-releases such as -rc1 are skipped).
+          TAG=$(gh release list --limit 50 --json tagName,isPrerelease \
+                  --jq '[.[] | select((.tagName | startswith("android-v")) and (.isPrerelease | not))][0].tagName')
+          if [ -z "$TAG" ] || [ "$TAG" = "null" ]; then
+            echo "No android-v* release found, skipping the APK"; exit 0
+          fi
+          gh release download "$TAG" --pattern '*.apk' --dir .
+          echo "APK=$(ls audioloader-remote-*.apk)" >> "$GITHUB_ENV"
+
+      - name: Upload the APK to this release
+        if: env.APK != ''
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ needs.once.outputs.upload_url }}
+          asset_path: ./${{ env.APK }}
+          asset_name: ${{ env.APK }}
+          asset_content_type: application/vnd.android.package-archive
