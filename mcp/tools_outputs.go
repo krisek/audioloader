@@ -12,6 +12,10 @@ type toggleOutputInput struct {
 	OutputID string `json:"outputid" jsonschema:"Output id from list_outputs"`
 }
 
+type volumeInput struct {
+	Volume int `json:"volume" jsonschema:"MPD volume, 0 (silent) to 100 (full)"`
+}
+
 type muteInput struct {
 	ID    string `json:"id" jsonschema:"Client id from list_snapcast_clients"`
 	Muted bool   `json:"muted" jsonschema:"true = mute, false = unmute (the target state)"`
@@ -41,6 +45,18 @@ func (e *toolEnv) registerOutputs(s *mcp.Server, cfg *Config) {
 				return nil, err
 			}
 			return append([]Output{}, np.Outputs...), nil
+		})
+
+	addTool(s, cfg, "set_volume",
+		"Set the MPD volume (0-100). Snapcast client volumes are separate; now_playing shows the current MPD volume.", true,
+		func(ctx context.Context, in volumeInput) (any, error) {
+			if in.Volume < 0 || in.Volume > 100 {
+				return nil, errors.New("volume must be between 0 and 100")
+			}
+			if _, err := e.api.Get(ctx, "volume", q("value", strconv.Itoa(in.Volume)), false); err != nil {
+				return nil, err
+			}
+			return e.state(ctx)
 		})
 
 	addTool(s, cfg, "list_snapcast_clients", "List the Snapcast clients (speakers/rooms) and whether each is muted.", false,

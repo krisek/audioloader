@@ -11,21 +11,21 @@ import (
 
 // Client talks to the audioloader HTTP API on behalf of one user.
 type Client struct {
-	base     string
-	mpdPort  string
-	clientID string
-	http     *http.Client
-	cookie   string
-	auth     string
+	base      string
+	mpdServer string
+	clientID  string
+	http      *http.Client
+	cookie    string
+	auth      string
 }
 
 func NewClient(cfg *Config, clientID string) *Client {
 	return &Client{
-		base:     cfg.Upstream,
-		mpdPort:  cfg.MPDPort,
-		clientID: clientID,
-		cookie:   cfg.Cookie,
-		auth:     cfg.Authorization,
+		base:      cfg.Upstream,
+		mpdServer: cfg.MPDServer,
+		clientID:  clientID,
+		cookie:    cfg.Cookie,
+		auth:      cfg.Authorization,
 		http: &http.Client{
 			Timeout: cfg.Timeout,
 			// A redirect means an auth layer rejected us; surface it instead of following.
@@ -38,7 +38,7 @@ func NewClient(cfg *Config, clientID string) *Client {
 // withClient adds this user's client_id.
 func (c *Client) Get(ctx context.Context, endpoint string, params url.Values, withClient bool) ([]byte, error) {
 	q := url.Values{}
-	q.Set("mpd_port", c.mpdPort)
+	q.Set("mpd_server", c.mpdServer)
 	for k, vs := range params {
 		for _, v := range vs {
 			if v != "" {

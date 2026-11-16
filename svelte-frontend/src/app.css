@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --s950: 11 11 16; --s900: 18 18 24; --s800: 26 26 35; --s700: 36 36 48; --s600: 48 48 63;
+    --ink: 232 232 239; --ink-muted: 160 160 180; --ink-faint: 107 107 128;
+    --a300: 110 231 183; --a400: 52 211 153;
+    --danger: 248 113 113; --warn: 251 191 36;
+    color-scheme: dark;
+  }
+
+  :root[data-theme='light'] {
+    --s950: 244 245 248; --s900: 255 255 255; --s800: 238 240 245; --s700: 226 229 237; --s600: 205 209 220;
+    --ink: 24 24 32; --ink-muted: 80 82 100; --ink-faint: 120 122 140;
+    --a300: 16 185 129; --a400: 5 150 105;
+    --danger: 220 38 38; --warn: 180 83 9;
+    color-scheme: light;
+  }
+
+  html,
+  body,
+  #app {
+    height: 100%;
+  }
+
+  body {
+    @apply m-0 bg-surface-950 font-sans text-ink antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent-400;
+  }
+}

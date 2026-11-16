@@ -42,6 +42,20 @@ func TestWriteToolsParameters(t *testing.T) {
 		t.Error("togglesnapcastclient not called")
 	}
 
+	callTool(t, s, "set_volume", map[string]any{"volume": 35})
+	volumeCalled := false
+	for _, call := range m.calls {
+		if call.Path == "/volume" {
+			volumeCalled = true
+			if call.Query.Get("value") != "35" {
+				t.Errorf("set_volume: %+v", call)
+			}
+		}
+	}
+	if !volumeCalled {
+		t.Error("volume not called")
+	}
+
 	callTool(t, s, "toggle_output", map[string]any{"outputid": "1"})
 	for _, call := range m.calls {
 		if call.Path == "/toggleoutput" && call.Query.Get("output") != "1" {

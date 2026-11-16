@@ -2,29 +2,29 @@
 
 Audioloader is a web based [Music Player Deamon](http://www.musicpd.org) (MPD) client with special focus on playing music organized in folders.
 
-[![Screenshot](https://i.postimg.cc/fyCT7vS9/Screenshot-from-2020-04-26-16-03-24.png)](https://postimg.cc/fS3NDmKz)
+[![Screenshot](https://i.postimg.cc/6QgRm1wJ/Screenshot-From-2026-11-16-18-04-51.png)](https://postimg.cc/jW6LWcLZ)
 
-The software has three components: a Go backend, an Angular/Bootstrap based, responsive web user interface and and optional discovery daemon which discovers UPnP media renderers or mpd servers on the local network that can play streams from the central MPD server.
+The software has four components: a Go backend, a responsive web user interface written in Svelte, an optional [MCP service](mcp/README.md) so AI agents can control the player, and a native [Android remote](android/README.md).
 
 The Go application is very thin, it does almost nothing but proxying requests towards the MPD server from the web client.
 
-The application features six ways of selecting music from MPD and other sources:
+The application features multiple ways of selecting music from MPD and other sources (these are the seven views of the web UI, see [Use](#use)):
 
 1. selecting folders from a browser
-1. searching in the MPD database
 1. creating a random set of folders to choose music from (useful for large music libraries)
-1. selecting folders from the history
 1. marking folders as favorite
+1. selecting folders from the history
+1. managing the play queue
 1. select radio station from the [radio-browser.info](http://radio-browser.info) community radio database
-1. play album from Bandcamp (optional) 
+1. play album from Bandcamp or Youtube (optional)
 
-The Go application runs on the same system where you run MPD. You can configure any supported output method on MPD; a very common use case is to install the application on a Raspberry Pi (or home server), configure MPD with HTTP stream output, so that you can stream music from all of your devices.
+You can also search in the MPD database from the search bar of the folders view.
 
-If you configure the MPD server with a HTTP stream output, the application can load this stream to UPnP media renderers or other mpd servers discovered on your network. ⚠ Don't forget to configure the `AL_DEFAULT_STREAM` environment parameter or in the 'stream from' parameter in the settings menu of the web UI. UPnP device and mpd server discovery is performed by separate scripts.
+Running the Go application and serving the frontend on the same machine as MPD is the most straightforward option, though the setup isn't tied to a single host—you can just as easily run audioloader on a separate system. Any output method MPD supports will work. A common setup is installing everything on a Raspberry Pi or home server and configuring MPD with an HTTP stream output, letting you listen from any device. ⚠ Make sure to set the AL_DEFAULT_STREAM environment parameter to this stream's URL.
 
-If you have multiple outputs on your MPD server, you can toggle them from the application directly.
+If your MPD server has multiple outputs configured, you can toggle them directly from the app.
 
-If you configure a Snapcast server (it is a great tool for creating a multi-room streaming system with mpd), then the application will query the clients on the Snapcast server, and you can mute or un-mute them from the application.
+If you're using a Snapcast server (a great option for multi-room audio with MPD), the application will automatically query its clients so you can mute or unmute them right from the interface.
 
 # Installation
 
@@ -34,7 +34,7 @@ If you configure a Snapcast server (it is a great tool for creating a multi-room
 sudo apt install redis-server redis-tools
 ```
 
-Redis is used to cache the name of folder images and to keep track of the UPnP devices / MPD servers discovered on the network. It slightly improves performance of showing folder images, but it is not a must to install it the application can work without it — though, if you want to have UPnP discovery, it is a must to install it.
+Redis is used to cache the name of folder images. It slightly improves performance of showing folder images, but it is not a must to install it, the application works without it.
 
 2. Download the appropriate release, and unpack it.
 
@@ -45,7 +45,7 @@ AL_BANDCAMP_ENABLED: true | false
 AL_CLIENT_DB  where to store client favorites/history/random folders — the user running the web application needs to have write access on this directory
 AL_DEFAULT_STREAM: url of the mpd lame/vorbis stream (httpd output) configured ~ can be overriden from the web UI settings
 AL_MPD_HOST: hostname of your mpd server
-AL_MPD_PORT: mpd server port ~ can be overriden from the web UI settings
+AL_MPD_PORT: mpd server port ~ the default server, can be overriden per client with `mpd_server`
 AL_LISTENING_PORT: where the backend should lister
 AL_LIBRARY_PATH: the application will look in this folder for your music repository when it returns cover art
 AL_SNAPCAST_HOST: the application well query this Snapcast server for clients
@@ -56,21 +56,23 @@ For simple use only variables `AL_CLIENT_DB` and `AL_LIBRARY_PATH` are required 
 
 4. Run audioloader
 
-5. Web server
+The web UI is served by the backend itself (from the `static` folder) — no separate web server is needed, but you can put one (nginx, Caddy) in front of it for HTTPS. The UI is installable as a PWA (needs HTTPS or localhost).
+
+5. Choosing the MPD server
+
+Every API call accepts `mpd_server=host:port` (default `localhost:6600`, or `AL_MPD_HOST`:`AL_MPD_PORT`). The port may be omitted (`mpd_server=rpi.local`), IPv6 is written `[::1]:6600`. This is how every client picks its MPD server: the web UI in the settings, the Android app in the profile, the MCP service with `AL_MCP_MPD_SERVER`.
 
 6. Bandcamp and Youtube support
 
 You need to install `yt-dlp` for working Bandcamp / Youtube support. 
 
 ```bash
-pip install yt-dlp
+uv tool install "yt-dlp[default,curl-cffi]"
 ```
 
+Bandcamp needs `curl-cffi` and sometimes a pinned browser target; see [BANDCAMP.md](BANDCAMP.md).
+
 This part of the code is not supported at all, it might break anytime.
-
-If you want to enable UPnP discovery, start the `disover.py` script as well, it requires two parameters: -m the IP address of the audioloader host and -n the local subnet. (This might be enhanced in later releases.)
-
-Similarly, you can enable mpd discovery by starting the `discover-mpd.py` script. There is a little shell script as well (`discover-mpd-static.sh`) which updates your mpd player servers from your networks into redis without any probing -- this one is intended to be run from crontab.
 
 ## systemd control
 
@@ -86,59 +88,76 @@ Audioloader is distributed in this Git repository. New features are developed ag
 
 # Use
 
-If you run the application with standalone, you just need to visit http://localhost:3400 after starting it. 
+If you run the application standalone, you just need to visit http://localhost:3400 after starting it.
 
-## Navigation bar
-The first icon on the left side opens the directory view. The second opens the dash (which is the default view). The third one opens the radio stations view. The optional fourth one shows your Bandcamp history. In the middle you see the title of the currently playing song and the various media controls (if there's anything playing). On the left side you see a search bar: it needs minimum four characters to start searching.
+On a wide screen there is a sidebar with the seven views, on a phone they are in a bottom bar. The player bar shows the currently playing song with the media controls, a volume control and, if you have them, your MPD outputs and Snapcast clients.
 
-### Settings
-The gear button opens the settings dialog.
+## The seven views
 
-MPD port: this is where you can set what port the Flask application should use to connect to the MPD server. (Tip: if you have a family, you can set up separate MPD server for everybody — it's not complicated.)
+- **Folders**: the directory browser, it speaks for itself. Folders with few sub-directories are shown with cover art, large ones as a list.
+- **Random**: 12 random albums from your MPD database, important if you have a large library and you just want to listen to something. The set is persistent, but only one exists at the same time for a client; the refresh button generates a new one and the old one is lost.
+- **Favorites**: the folders you marked as favorite, as many as you want.
+- **History**: the last 50 loaded folders (this is the default view).
+- **Queue**: what is waiting to be played. You can add single tracks or whole albums to it, and remove things from it. Albums, radio stations and Bandcamp albums are added to the end of the queue. At the moment the application plays in consume mode, ie. played tracks leave the queue.
+- **Radio**: search and load radio stations from the [radio-browser.info](http://radio-browser.info) community radio database; the last 10 started station is displayed in the history.
+- **Bandcamp**: your Bandcamp / Youtube history. You can paste a Bandcamp album URL here (or in the search box) to play it directly, see [BANDCAMP.md](BANDCAMP.md) if it doesn't work.
 
-Stream from: If you plan to stream from the MPD server, where this stream is located
+## Settings
 
-Client: your id, this identifies your history / random album selection and favorites on the server, so that you can use the application from several devices
+The user button opens the settings dialog. Everything here is stored on the device, except the user's favorites, history and random set, which are stored on the server.
 
-Log level: not relevant (only debug is supported for the time being)
+- **User**: your id (the `client_id`). It identifies your history / random album selection and favorites on the server, so that you can use the application from several devices — and have separate lists for everybody in the family. You can pick an existing user or create a new one.
+- **MPD server** (`host:port`): which MPD server this device talks to, default `localhost:6600`. (Tip: if you have a family, you can set up separate MPD server for everybody — it's not complicated.) Changing it reloads the views.
+- **Theme**: system, light or dark.
 
-List from # items: amount of sub-directories in a directory to represent with cover arts. If there are more sub-directories in a directory than this number then the sub-directories will be represented as a list. 
+## MCP (AI agents)
 
-## Music selection
-The directory browser speaks for itself.
+The optional `audioloader-mcp` service lets an AI agent (Claude, Cline, Gemini CLI, ...) see what is playing, search and browse the library, start albums, manage the queue and favorites, and so on. It is a separate small Go process which talks to the audioloader HTTP API, so if you don't need it, just don't run it. Everything is documented in [mcp/README.md](mcp/README.md), here is the short version:
 
-The dash contains three areas the random set, the favorites and the history.
+```bash
+cd mcp && go build -o ../audioloader-mcp .
+openssl rand -base64 33 | tr '+/' '-_'     # your secret
+AL_MCP_PATH="/mcp/<secret>" AL_MCP_CLIENT_ID=kris ../audioloader-mcp
+```
 
-Having random directories presented is an important feature, if you have a large amount of albums, and you just want listening something but you don't have anything particular in mind. The random set presents 12 random albums from your MPD database. The set is persistent, but only one exists at the same time for a client. If you click on the refresh button a new one will be generated, and the existing set will be lost.
+There is no login: the secret path in the URL is the credential, and it is bound to one `client_id`. Treat the URL like a password and publish it over HTTPS only. Because every URL starts with `/mcp/`, one generic rule in your reverse proxy sends all of them to the MCP service and everything else to audioloader (reverse proxy examples for nginx and Caddy are in the MCP README). `AL_MCP_READONLY=true` hides all the tools that change anything. A systemd unit is in `audioloader-mcp.service`.
 
-On the right hand side you find your listening history; the last 10 loaded directories are saved.
+To add it to an agent, you just need the URL:
 
-If you mark a folder as favorite it will be listed in the bottom of the dash. You can have as many favorites as you want.
+```bash
+claude mcp add --transport http audioloader https://music.example.org/mcp/<secret>
+```
 
-The radio station view let's you search and load radio stations for the [radio-browser.info](http://radio-browser.info) community radio database. The last 10 started station is displayed in the radio station history.
+or in the JSON config of any agent that supports remote servers:
 
-You can paste Bandcamp album URL's in the search box on the dash and the Bandcamp view, this offers you the possibility to play albums directly from Bandcamp.
+```json
+{ "mcpServers": { "audioloader": { "url": "https://music.example.org/mcp/<secret>" } } }
+```
 
-## UPnP
+(Gemini CLI wants `httpUrl`, Cline `streamableHttp`, Claude Desktop can add it as a custom connector.)
 
-UPnP media renderers available on the network are monitored by the `discover.py` daemon. This application listens to the traffic in the UPnP multicast group and if a new device appears, it registers the device's capabilities. Audioloader offers rendering on devices which have been seen on the network in the last 10 minutes. (Consequently, if you turn off a device it won't immediately disappear from Audioloader.) When you turn on a UPnP device it might take some time until `discover.py` finds it, depending on how chatty the device is on UPnP. (In order not to miss anything, `discover.py` initiates full UPnP discovery regularly.)
+## Android remote
 
+A native Android remote control lives in [`android/`](android/README.md). It does not browse the library (use the web UI for that), it mirrors what MPD is playing and controls it: media notification and lock screen controls, headset buttons, now playing with cover art, queue, outputs and Snapcast rooms. It can pause the music when a Bluetooth device (earbuds, car) disconnects. You can have several server profiles, each with its own MPD server, user and authentication (none, basic, bearer token or cookie). Signed APKs are attached to GitHub releases tagged `android-v*`.
 
 # TODO / ISSUES
 
-- (Better) playlist management
 - At the moment the application plays in consume mode, ie. there is no rewind option
 
 # Development
 
 ```bash
-apt update
-# get node installed with nvm
-cd /projects/audioloader/angular/audioloader
-yarn install
-ng serve --host 0.0.0.0
+# backend
+go test . && go build
 
+# web UI (Svelte), see svelte-frontend/README.md
+cd svelte-frontend
+npm ci
+npm run dev          # dev server on http://localhost:5173
+./build.sh           # build and install into ../static
 ```
+
+The backend API is described in [MPD_API_MAPPING.md](MPD_API_MAPPING.md).
 
 # About
 The application was created by Kristof Imre Szabo.

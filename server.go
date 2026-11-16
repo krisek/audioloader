@@ -12,7 +12,6 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -26,8 +25,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-redis/redis/v8"
-	"github.com/huin/goupnp"
-	"github.com/huin/goupnp/dcps/av1"
 	"github.com/krisek/gompd/mpd"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/cors"
@@ -91,36 +88,36 @@ var (
 )
 
 type mpdMetricsSnapshot struct {
-	PollActiveRequests int64  `json:"poll_active_requests"`
-	PollTotalRequests  uint64 `json:"poll_total_requests"`
-	PollTimeouts       uint64 `json:"poll_timeouts"`
-	PollIdleEvents     uint64 `json:"poll_idle_events"`
-	PollErrors         uint64 `json:"poll_errors"`
+	PollActiveRequests  int64  `json:"poll_active_requests"`
+	PollTotalRequests   uint64 `json:"poll_total_requests"`
+	PollTimeouts        uint64 `json:"poll_timeouts"`
+	PollIdleEvents      uint64 `json:"poll_idle_events"`
+	PollErrors          uint64 `json:"poll_errors"`
 	PollRejectDuplicate uint64 `json:"poll_reject_duplicate"`
 	PollRejectCapacity  uint64 `json:"poll_reject_capacity"`
 	PollSlotCapacity    int    `json:"poll_slot_capacity"`
 	PollSlotInUse       int    `json:"poll_slot_in_use"`
-	MPDDialAttempts    uint64 `json:"mpd_dial_attempts"`
-	MPDDialFailures    uint64 `json:"mpd_dial_failures"`
-	MPDDialSuccesses   uint64 `json:"mpd_dial_successes"`
-	Goroutines         int    `json:"goroutines"`
+	MPDDialAttempts     uint64 `json:"mpd_dial_attempts"`
+	MPDDialFailures     uint64 `json:"mpd_dial_failures"`
+	MPDDialSuccesses    uint64 `json:"mpd_dial_successes"`
+	Goroutines          int    `json:"goroutines"`
 }
 
 func getMPDMetricsSnapshot() mpdMetricsSnapshot {
 	return mpdMetricsSnapshot{
-		PollActiveRequests: atomic.LoadInt64(&pollActiveRequests),
-		PollTotalRequests:  atomic.LoadUint64(&pollTotalRequests),
-		PollTimeouts:       atomic.LoadUint64(&pollTimeouts),
-		PollIdleEvents:     atomic.LoadUint64(&pollIdleEvents),
-		PollErrors:         atomic.LoadUint64(&pollErrors),
+		PollActiveRequests:  atomic.LoadInt64(&pollActiveRequests),
+		PollTotalRequests:   atomic.LoadUint64(&pollTotalRequests),
+		PollTimeouts:        atomic.LoadUint64(&pollTimeouts),
+		PollIdleEvents:      atomic.LoadUint64(&pollIdleEvents),
+		PollErrors:          atomic.LoadUint64(&pollErrors),
 		PollRejectDuplicate: atomic.LoadUint64(&pollRejectedDuplicate),
 		PollRejectCapacity:  atomic.LoadUint64(&pollRejectedCapacity),
 		PollSlotCapacity:    cap(pollSlots),
 		PollSlotInUse:       len(pollSlots),
-		MPDDialAttempts:    atomic.LoadUint64(&mpdDialAttempts),
-		MPDDialFailures:    atomic.LoadUint64(&mpdDialFailures),
-		MPDDialSuccesses:   atomic.LoadUint64(&mpdDialSuccesses),
-		Goroutines:         runtime.NumGoroutine(),
+		MPDDialAttempts:     atomic.LoadUint64(&mpdDialAttempts),
+		MPDDialFailures:     atomic.LoadUint64(&mpdDialFailures),
+		MPDDialSuccesses:    atomic.LoadUint64(&mpdDialSuccesses),
+		Goroutines:          runtime.NumGoroutine(),
 	}
 }
 
@@ -296,8 +293,51 @@ func (m *mpdConnectionManager) withClient(host, port, purpose string, fn func(*m
 	return err
 }
 
+// parseMPDServer splits a "host:port" string (IPv6 as "[::1]:6600"). A missing
+// port falls back to mpdPort and a missing host to mpdHost.
+func parseMPDServer(s string) (string, string, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return mpdHost, mpdPort, nil
+	}
+	host, port, err := net.SplitHostPort(s)
+	if err != nil {
+		// No port given ("myhost", "::1", "[::1]").
+		host, port = strings.Trim(s, "[]"), ""
+	}
+	if host == "" {
+		host = mpdHost
+	}
+	if port == "" {
+		port = mpdPort
+	}
+	n, perr := strconv.Atoi(port)
+	if perr != nil || n < 1 || n > 65535 || strings.ContainsAny(host, " /?#@") {
+		return "", "", fmt.Errorf("invalid mpd_server %q, expected host:port", s)
+	}
+	return host, port, nil
+}
+
+// requestMPDServer reads mpd_server=host:port from the request. The legacy
+// mpd_port=N parameter (used by older clients) is still honoured and combined
+// with the default host. Default: AL_MPD_HOST:AL_MPD_PORT (localhost:6600).
+func requestMPDServer(r *http.Request) (string, string, error) {
+	q := r.URL.Query()
+	if s := q.Get("mpd_server"); s != "" {
+		return parseMPDServer(s)
+	}
+	if p := q.Get("mpd_port"); p != "" {
+		return parseMPDServer(mpdHost + ":" + p)
+	}
+	return mpdHost, mpdPort, nil
+}
+
 func withRequestMPDClient(r *http.Request, purpose string, fn func(*mpd.Client) error) error {
-	return sharedMPDConnections.withClient(mpdHost, r.URL.Query().Get("mpd_port"), purpose, fn)
+	host, port, err := requestMPDServer(r)
+	if err != nil {
+		return err
+	}
+	return sharedMPDConnections.withClient(host, port, purpose, fn)
 }
 
 // Helper function to get environment variables with a default value
@@ -399,12 +439,9 @@ func main() {
 
 	// Set up HTTP routes
 	http.HandleFunc("/cover", coverHandler)
-	http.HandleFunc("/kodi", kodiHandler)
-	http.HandleFunc("/upnp", upnpHandler)
 	http.HandleFunc("/generate_randomset", generateRandomSetHandler)
 	http.HandleFunc("/remove_favourite", favouritesHandler)
 	http.HandleFunc("/add_favourite", favouritesHandler)
-	http.HandleFunc("/active_players", activePlayersHandler)
 	http.HandleFunc("/radio_history", radioHistoryHandler)
 	http.HandleFunc("/bandcamp_history", bandcampHistoryHandler)
 	http.HandleFunc("/history", dataHandler)
@@ -428,6 +465,7 @@ func main() {
 	http.HandleFunc("/queue_play", mpdProxyHandler)
 	http.HandleFunc("/queue_remove", mpdProxyHandler)
 	http.HandleFunc("/queue_clear", mpdProxyHandler)
+	http.HandleFunc("/volume", mpdProxyHandler)
 	http.HandleFunc("/status", mpdProxyHandler)
 	http.HandleFunc("/poll_currentsong", pollCurrentSongHandler)
 	http.HandleFunc("/currentsong", currentSongHandler)
@@ -621,149 +659,6 @@ func getRadioStationURL(stationUUID string) string {
 	// Placeholder for pyradios implementation
 	// Replace this with the actual implementation later
 	return ""
-}
-
-func kodiHandler(w http.ResponseWriter, r *http.Request) {
-	// Implement Kodi handler
-}
-
-// Define constants or use environment/config variables as needed
-var defaultStreamURL = "http://localhost:8000/audio.ogg"
-
-// upnpHandler manages both UPnP and MPD control
-func upnpHandler(w http.ResponseWriter, r *http.Request) {
-	server := r.URL.Query().Get("server")
-	if server == "" || server == "undefined" {
-		json.NewEncoder(w).Encode(map[string]string{"result": "no server given"})
-		return
-	}
-
-	action := r.URL.Query().Get("action")
-	if action == "" {
-		action = "Player.Stop"
-	}
-	streamURL := r.URL.Query().Get("stream")
-	if streamURL == "" {
-		streamURL = defaultStreamURL
-	}
-
-	if strings.Contains(server, "upnp") || strings.Contains(server, "xml") {
-		// Handle UPnP device actions
-		err := handleUPnP(server, action, streamURL)
-		if err != nil {
-			log.Debug().Str("function", "upnpHandler").Msg(fmt.Sprintf("UPnP Error: %v", err))
-			json.NewEncoder(w).Encode(map[string]string{"result": "load failed"})
-			return
-		}
-	} else if strings.Contains(server, "_6600") {
-		// Handle MPD device actions
-		err := handleMPD(server, action, streamURL)
-		if err != nil {
-			log.Debug().Str("function", "upnpHandler").Msg(fmt.Sprintf("MPD Error: %v", err))
-			json.NewEncoder(w).Encode(map[string]string{"result": "load failed"})
-			return
-		}
-	} else {
-		// No matching device type
-		json.NewEncoder(w).Encode(map[string]string{"result": "unsupported server"})
-		return
-	}
-
-	// Success response
-	json.NewEncoder(w).Encode(map[string]string{"result": "loaded"})
-}
-
-// handleUPnP controls UPnP devices using the AVTransport service
-func handleUPnP(server, action, streamURL string) error {
-	// Parse the server URL
-	parsedURL, err := url.Parse(server)
-	if err != nil {
-		return fmt.Errorf("failed to parse server URL: %v", err)
-	}
-
-	// Discover and connect to the UPnP device
-	device, err := goupnp.DeviceByURL(parsedURL)
-	if err != nil {
-		return fmt.Errorf("failed to discover UPnP device: %v", err)
-	}
-
-	// Parse the device's URLBase into *url.URL
-	deviceURL, err := url.Parse(device.URLBase.String())
-	if err != nil {
-		return fmt.Errorf("failed to parse device URLBase: %v", err)
-	}
-
-	// Access the AVTransport service
-	transport, err := av1.NewAVTransport1ClientsByURL(deviceURL)
-	if err != nil || len(transport) == 0 {
-		return fmt.Errorf("failed to connect to AVTransport service: %v", err)
-	}
-
-	client := transport[0] // Assuming there is at least one transport client
-
-	// Perform action based on the provided action string
-	switch action {
-	case "Player.Open":
-		// Set the URI for playback and start playing
-		err := client.SetAVTransportURI(0, streamURL, "Audioloader")
-		if err != nil {
-			return fmt.Errorf("failed to set AVTransport URI: %v", err)
-		}
-		err = client.Play(0, "1")
-		if err != nil {
-			return fmt.Errorf("failed to start playback: %v", err)
-		}
-	default:
-		// Stop playback
-		err := client.Stop(0)
-		if err != nil {
-			return fmt.Errorf("failed to stop playback: %v", err)
-		}
-	}
-
-	return nil
-}
-
-// handleMPD controls MPD servers
-func handleMPD(server, action, streamURL string) error {
-	// Parse MPD host and port
-	mpdHostPort := strings.Split(server, "_")
-	if len(mpdHostPort) != 2 {
-		return fmt.Errorf("invalid MPD server format")
-	}
-	mpdHost := mpdHostPort[0]
-	mpdPort := mpdHostPort[1]
-
-	// Get MPD client
-	err := sharedMPDConnections.withClient(mpdHost, mpdPort, "default", func(mpdClient *mpd.Client) error {
-		switch action {
-		case "Player.Open":
-			err := mpdClient.Clear()
-			if err != nil {
-				return fmt.Errorf("failed to clear playlist: %v", err)
-			}
-			err = mpdClient.Add(streamURL)
-			if err != nil {
-				return fmt.Errorf("failed to add stream to playlist: %v", err)
-			}
-			err = mpdClient.Play(-1)
-			if err != nil {
-				return fmt.Errorf("failed to start playback: %v", err)
-			}
-		default:
-			err := mpdClient.Stop()
-			if err != nil {
-				return fmt.Errorf("failed to stop playback: %v", err)
-			}
-		}
-
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("failed to connect to MPD: %v", err)
-	}
-
-	return nil
 }
 
 func randomChoice(albums []string, k int) []string {
@@ -977,14 +872,6 @@ func remove(slice []string, item string) []string {
 		}
 	}
 	return slice
-}
-
-// ActivePlayersHandler handles requests to retrieve active players
-func activePlayersHandler(w http.ResponseWriter, r *http.Request) {
-	players := getActivePlayers()
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(players)
 }
 
 func radioHistoryHandler(w http.ResponseWriter, r *http.Request) {
@@ -1355,11 +1242,13 @@ func getBandcampTrackURLs(url string) ([]string, error) {
 	// Capture the output
 	var out bytes.Buffer
 	cmd.Stdout = &out
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 
 	// Run the command
 	err := cmd.Run()
 	if err != nil {
-		return nil, fmt.Errorf("yt-dlp command failed: %v", err)
+		return nil, fmt.Errorf("yt-dlp command failed: %v: %s", err, strings.TrimSpace(stderr.String()))
 	}
 
 	// Split the output into lines (each URL is on a new line)
@@ -1537,6 +1426,15 @@ func mpdProxyHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			err = mpdClient.DeleteID(id)
 			content["message"] = "Removed"
+		case "/volume":
+			volume, convErr := strconv.Atoi(r.URL.Query().Get("value"))
+			if convErr != nil || volume < 0 || volume > 100 {
+				http.Error(w, "Invalid volume (0-100)", http.StatusBadRequest)
+				return errResponseSent
+			}
+			err = mpdClient.SetVolume(volume)
+			content["message"] = "Volume set"
+			content["volume"] = volume
 		case "/queue_clear":
 			// Keep the track that is playing; with nothing playing, empty the queue.
 			status, _ := mpdClient.Status()
@@ -1819,7 +1717,16 @@ func mpdProxyHandler(w http.ResponseWriter, r *http.Request) {
 
 			// Check if the playable URL is a YouTube video
 			if strings.Contains(playable, "youtube") || strings.Contains(playable, "youtu.be") || strings.Contains(playable, "bandcamp.com") {
-				playables, _ = getBandcampTrackURLs(playable)
+				var ytErr error
+				playables, ytErr = getBandcampTrackURLs(playable)
+				if ytErr == nil && len(playables) == 0 {
+					ytErr = fmt.Errorf("yt-dlp returned no playable URLs")
+				}
+				if ytErr != nil {
+					log.Error().Str("function", "mpdProxyHandler:addplay").Msg(fmt.Sprintf("%v", ytErr))
+					http.Error(w, "Could not resolve stream: "+ytErr.Error(), http.StatusBadGateway)
+					return errResponseSent
+				}
 			}
 
 			mpdClient.Consume(true)
@@ -2002,62 +1909,6 @@ func mpdProxyHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(content)
 }
 
-func getActivePlayers() []map[string]interface{} {
-	players := []map[string]interface{}{}
-
-	// Initialize Redis client
-	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-		DB:   0,
-	})
-
-	defer rdb.Close()
-
-	// Scan for keys
-	iter := rdb.Scan(ctx, 0, "upnp:player:*:last_seen", 0).Iterator()
-	for iter.Next(ctx) {
-		key := iter.Val()
-		lastSeenStr, err := rdb.Get(ctx, key).Result()
-		if err != nil {
-			log.Debug().Str("function", "getActivePlayers").Msg(fmt.Sprintf("Failed to get last seen: %v", err))
-			continue
-		}
-
-		lastSeen, err := strconv.ParseFloat(lastSeenStr, 64)
-		if err != nil {
-			log.Debug().Str("function", "getActivePlayers").Msg(fmt.Sprintf("Failed to parse last seen: %v", err))
-			continue
-		}
-
-		if time.Now().Unix()-int64(lastSeen) < 1200 {
-			dataStr, err := rdb.Get(ctx, strings.Replace(key, "last_seen", "data", 1)).Result()
-			if err != nil {
-				log.Debug().Str("function", "getActivePlayers").Msg(fmt.Sprintf("Failed to get data: %v", err))
-				continue
-			}
-
-			var data map[string]interface{}
-			if err := json.Unmarshal([]byte(dataStr), &data); err != nil {
-				log.Debug().Str("function", "getActivePlayers").Msg(fmt.Sprintf("Failed to unmarshal data: %v", err))
-				continue
-			}
-
-			players = append(players, data)
-		}
-
-		// Housekeeping
-		if time.Now().Unix()-int64(lastSeen) > 1800 {
-			rdb.Del(ctx, strings.Replace(key, "last_seen", "data", 1))
-			rdb.Del(ctx, key)
-		}
-	}
-	if err := iter.Err(); err != nil {
-		log.Debug().Str("function", "getActivePlayers").Msg(fmt.Sprintf("Failed to iterate: %v", err))
-	}
-
-	return players
-}
-
 func processCurrentSong(currentsong map[string]interface{}) map[string]interface{} {
 	// Initialize states
 	states := []string{"play", "pause", "stop"}
@@ -2160,7 +2011,7 @@ func pollCurrentSongHandler(w http.ResponseWriter, r *http.Request) {
 	err = withRequestMPDClient(r, "poll-idle", func(mpdClient *mpd.Client) error {
 		done := make(chan error, 1)
 		go func() {
-			result, idleErr := mpdClient.Idle("playlist", "player")
+			result, idleErr := mpdClient.Idle("playlist", "player", "mixer", "output")
 			if idleErr != nil {
 				done <- idleErr
 				return
@@ -2241,8 +2092,6 @@ func pollCurrentSongHandler(w http.ResponseWriter, r *http.Request) {
 	// Add additional information
 	// Get the current outputs
 	currentsongMap["outputs"] = outputs
-
-	currentsongMap["players"] = getActivePlayers() // Preserve the structure of players
 	currentsongMap["bandcamp_enabled"] = bandcampEnabled
 	currentsongMap["default_stream"] = defaultStream
 
@@ -2306,8 +2155,7 @@ func currentSongHandler(w http.ResponseWriter, r *http.Request) {
 		currentsongMap[k] = v
 	}
 
-	// Add additional information (players, bandcamp_enabled, default_stream)
-	currentsongMap["players"] = getActivePlayers()
+	// Add additional information (bandcamp_enabled, default_stream)
 	currentsongMap["outputs"] = outputs
 	currentsongMap["bandcamp_enabled"] = bandcampEnabled
 	currentsongMap["default_stream"] = defaultStream

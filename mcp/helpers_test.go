@@ -65,7 +65,7 @@ func (m *mock) last() call {
 }
 
 func testConfig(upstream string, mod func(*Config)) *Config {
-	c := &Config{Upstream: upstream, MPDPort: "6600", Timeout: 2e9,
+	c := &Config{Upstream: upstream, MPDServer: "localhost:6600", Timeout: 2e9,
 		Routes: []Route{{Path: "/" + secretKris, ClientID: "kris"}, {Path: "/" + secretAnna, ClientID: "anna"}}}
 	if mod != nil {
 		mod(c)

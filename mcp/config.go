@@ -25,7 +25,7 @@ type Route struct {
 type Config struct {
 	Listen        string
 	Upstream      string
-	MPDPort       string
+	MPDServer     string
 	Routes        []Route
 	ReadOnly      bool
 	Timeout       time.Duration
@@ -73,7 +73,7 @@ func addRoute(routes []Route, path, clientID string) ([]Route, error) {
 //	AL_MCP_LISTEN            listen address (default 127.0.0.1:3401)
 //	AL_MCP_PORT              shortcut: listen on 127.0.0.1:<port>
 //	AL_MCP_UPSTREAM          audioloader base URL (default http://127.0.0.1:3400)
-//	AL_MCP_MPD_PORT          mpd_port sent upstream (default 6600)
+//	AL_MCP_MPD_SERVER        mpd_server (host:port) sent upstream (default localhost:6600)
 //	AL_MCP_PATH + AL_MCP_CLIENT_ID   single user
 //	AL_MCP_ROUTES            "path1=client1,path2=client2"
 //	AL_MCP_ROUTES_FILE       file with one "path client_id" per line (# comments)
@@ -81,12 +81,12 @@ func addRoute(routes []Route, path, clientID string) ([]Route, error) {
 //	AL_MCP_UPSTREAM_COOKIE / _BEARER / _BASIC_USER / _BASIC_PASSWORD   optional upstream auth
 func LoadConfig(get func(string) string, readFile func(string) ([]byte, error)) (*Config, error) {
 	c := &Config{
-		Listen:   envOr(get, "AL_MCP_LISTEN", "127.0.0.1:"+envOr(get, "AL_MCP_PORT", "3401")),
-		Upstream: strings.TrimRight(envOr(get, "AL_MCP_UPSTREAM", "http://127.0.0.1:3400"), "/"),
-		MPDPort:  envOr(get, "AL_MCP_MPD_PORT", "6600"),
-		ReadOnly: parseBool(get("AL_MCP_READONLY")),
-		Cookie:   get("AL_MCP_UPSTREAM_COOKIE"),
-		Timeout:  10 * time.Second,
+		Listen:    envOr(get, "AL_MCP_LISTEN", "127.0.0.1:"+envOr(get, "AL_MCP_PORT", "3401")),
+		Upstream:  strings.TrimRight(envOr(get, "AL_MCP_UPSTREAM", "http://127.0.0.1:3400"), "/"),
+		MPDServer: envOr(get, "AL_MCP_MPD_SERVER", "localhost:6600"),
+		ReadOnly:  parseBool(get("AL_MCP_READONLY")),
+		Cookie:    get("AL_MCP_UPSTREAM_COOKIE"),
+		Timeout:   10 * time.Second,
 	}
 	if ms, err := strconv.Atoi(get("AL_MCP_TIMEOUT_MS")); err == nil && ms > 0 {
 		c.Timeout = time.Duration(ms) * time.Millisecond

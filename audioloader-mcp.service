@@ -10,7 +10,7 @@ Description=Audioloader MCP server
 After=network.target audioloader.service
 
 [Service]
-# One "secret-path client_id" per line; the path is the credential. chmod 600 this file.
+# One "/mcp/<secret> client_id" per line; the path is the credential. chmod 600 this file.
 Environment="AL_MCP_ROUTES_FILE=/audioloader/mcp-routes.txt"
 Environment="AL_MCP_UPSTREAM=http://127.0.0.1:3400"
 Environment="AL_MCP_PORT=3401"

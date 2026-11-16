@@ -22,7 +22,7 @@ func TestNowPlayingNumbersAndUpstreamAuth(t *testing.T) {
 		t.Errorf("outputs wrong: %v", outs)
 	}
 	c := m.last()
-	if c.Header.Get("Cookie") != "audioloadermagic=x" || c.Header.Get("Authorization") != "Bearer tok" || c.Query.Get("mpd_port") != "6600" {
+	if c.Header.Get("Cookie") != "audioloadermagic=x" || c.Header.Get("Authorization") != "Bearer tok" || c.Query.Get("mpd_server") != "localhost:6600" {
 		t.Errorf("upstream request wrong: %+v", c)
 	}
 }

@@ -64,8 +64,8 @@ func TestToolsAndReadOnly(t *testing.T) {
 
 	s, _ := connect(t, testConfig(m.URL, nil), secretKris)
 	names := toolNames(t, s)
-	if len(names) != 28 {
-		t.Errorf("want 28 tools, got %d", len(names))
+	if len(names) != 29 {
+		t.Errorf("want 29 tools, got %d", len(names))
 	}
 
 	ro, _ := connect(t, testConfig(m.URL, func(c *Config) { c.ReadOnly = true }), secretKris)
