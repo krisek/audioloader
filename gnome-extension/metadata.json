@@ -1,0 +1,9 @@
+{
+  "uuid": "audioloader@xksh.org",
+  "name": "Audioloader Remote",
+  "description": "Remote control for an Audioloader server: media controls, multiple profiles, MPRIS integration.",
+  "shell-version": ["45", "46", "47", "48", "49", "50", "51"],
+  "settings-schema": "org.gnome.shell.extensions.audioloader",
+  "url": "https://github.com/xksh/audioloader",
+  "version": 1
+}

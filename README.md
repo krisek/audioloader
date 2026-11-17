@@ -4,7 +4,7 @@ Audioloader is a web based [Music Player Deamon](http://www.musicpd.org) (MPD) c
 
 [![Screenshot](https://i.postimg.cc/6QgRm1wJ/Screenshot-From-2026-11-16-18-04-51.png)](https://postimg.cc/jW6LWcLZ)
 
-The software has four components: a Go backend, a responsive web user interface written in Svelte, an optional [MCP service](mcp/README.md) so AI agents can control the player, and a native [Android remote](android/README.md).
+The software has four components: a Go backend, a responsive web user interface written in Svelte, an optional [MCP service](mcp/README.md) so AI agents can control the player, a native [Android remote](android/README.md), and a [GNOME Shell extension](gnome-extension/README.md).
 
 The Go application is very thin, it does almost nothing but proxying requests towards the MPD server from the web client.
 
@@ -140,6 +140,10 @@ or in the JSON config of any agent that supports remote servers:
 
 A native Android remote control lives in [`android/`](android/README.md). It does not browse the library (use the web UI for that), it mirrors what MPD is playing and controls it: media notification and lock screen controls, headset buttons, now playing with cover art, queue, outputs and Snapcast rooms. It can pause the music when a Bluetooth device (earbuds, car) disconnects. You can have several server profiles, each with its own MPD server, user and authentication (none, basic, bearer token or cookie). Signed APKs are attached to GitHub releases tagged `android-v*`.
 
+## GNOME Shell extension
+
+A remote control for GNOME 45+ lives in [`gnome-extension/`](gnome-extension/README.md). It adds a panel icon with now playing and cover art, transport buttons, a volume slider, a profile switcher (when you have several profiles), MPD outputs and Snapcast rooms. It also registers an MPRIS player, so the media card in the date/clock menu, the lock screen and the media keys follow your Audioloader server. It is not packaged yet (not on extensions.gnome.org); for build and install instructions see [`gnome-extension/README.md`](gnome-extension/README.md).
+
 # TODO / ISSUES
 
 - At the moment the application plays in consume mode, ie. there is no rewind option
@@ -158,6 +162,10 @@ npm run dev          # dev server on http://localhost:5173
 ```
 
 The backend API is described in [MPD_API_MAPPING.md](MPD_API_MAPPING.md).
+
+# Support
+
+Support is provided over IRC on [Libera.Chat](https://libera.chat/), in the `#audioloader` channel (`irc.libera.chat`).
 
 # About
 The application was created by Kristof Imre Szabo.

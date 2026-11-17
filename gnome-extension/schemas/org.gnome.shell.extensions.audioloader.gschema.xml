@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.audioloader"
+          path="/org/gnome/shell/extensions/audioloader/">
+    <key name="profiles" type="s">
+      <default>'[]'</default>
+      <summary>Profiles (JSON, no secrets)</summary>
+    </key>
+    <key name="show-indicator" type="b">
+      <default>true</default>
+      <summary>Show the panel icon and menu</summary>
+    </key>
+    <key name="cover-in-panel" type="b">
+      <default>false</default>
+      <summary>Show the album cover as the panel icon</summary>
+    </key>
+    <key name="show-tooltip" type="b">
+      <default>true</default>
+      <summary>Show song info when hovering the panel icon</summary>
+    </key>
+    <key name="active-profile" type="s">
+      <default>''</default>
+      <summary>Id of the active profile</summary>
+    </key>
+  </schema>
+</schemalist>
