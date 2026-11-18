@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GObject from 'gi://GObject';
+import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -33,6 +34,8 @@ class AudioloaderIndicator extends PanelMenu.Button {
         this._title = new PopupMenu.PopupMenuItem('Not connected', {reactive: false});
         this._title.label.x_expand = true;
         this._title.label.x_align = Clutter.ActorAlign.CENTER;
+        this._title.label.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+        this.menu.box.style = 'max-width: 22em;';
         this.menu.addMenuItem(this._title);
         this._status = new PopupMenu.PopupMenuItem('', {reactive: false});
         this._status.hide();
@@ -73,8 +76,8 @@ class AudioloaderIndicator extends PanelMenu.Button {
         this.menu.addMenuItem(this._snap);
 
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-        this.menu.addAction('Open web UI', () => host.openWebUi());
         this.menu.addAction('Preferences', () => host.openPrefs());
+        this.menu.addAction('Open web UI', () => host.openWebUi());
 
         this._tip = null;
         this._tipTimer = 0;
